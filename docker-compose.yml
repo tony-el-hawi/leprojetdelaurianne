@@ -2,7 +2,7 @@ services:
   api:
     build: ./api
     ports:
-      - "5000:5000"
+      - "5080:5000"
     volumes:
       - ./api/photos:/app/photos
       - ./api/database.sqlite3:/app/database.sqlite3

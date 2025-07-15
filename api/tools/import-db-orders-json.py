@@ -2,7 +2,7 @@ import json
 import requests
 import os
 
-API_URL_ORDERS = "http://localhost:5000/orders"
+API_URL_ORDERS = "http://localhost:5080/orders"
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
 json_path = os.path.join(script_dir, "db-orders-history.json")

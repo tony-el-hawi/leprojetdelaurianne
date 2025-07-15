@@ -3,7 +3,7 @@ import requests
 import os
 import base64
 
-API_URL = "http://localhost:5000/items"
+API_URL = "http://localhost:5080/items"
 
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
