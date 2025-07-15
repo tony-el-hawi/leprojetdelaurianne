@@ -373,7 +373,7 @@ function updateCartDisplay() {
         
         cartItems.innerHTML = cart.map(item => {
             const imageContent = item.photo 
-                ? `<img src="${item.photo}" alt="${item.name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 16px;">`
+                ? `<img src="${API_CONFIG.photoUrl}${item.photo}" alt="${item.name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 16px;">`
                 : `<div class="item-placeholder">${item.category.charAt(0)}</div>`;
             
             return `
@@ -396,34 +396,30 @@ function resetToNormalMode() {
     deleteMode = false;
     editingItemId = null;
     
-    const menuBtn = document.getElementById('menu-btn');
-    const mainMenu = document.getElementById('main-menu');
-    
+    const menuBtn = document.getElementById('menu-btn');    
     menuBtn.classList.remove('active');
-    mainMenu.classList.remove('open');
     
     displayItems();
     showToast('Mode normal activé');
 }
 
 function setEditMode() {
-    editMode = true;
+    if (editMode) {
+        editMode = false;
+        showToast('Mode édition désactivé');
+    } else {
+        editMode = true;
+        showToast('Mode édition activé');
+    }
     deleteMode = false;
-    
-    const mainMenu = document.getElementById('main-menu');
-    mainMenu.classList.remove('open');
-    
+        
     displayItems();
-    showToast('Mode édition activé');
 }
 
 function setDeleteMode() {
     editMode = false;
     deleteMode = true;
-    
-    const mainMenu = document.getElementById('main-menu');
-    mainMenu.classList.remove('open');
-    
+        
     displayItems();
     showToast('Mode suppression activé');
 }
@@ -453,7 +449,7 @@ function editItem(itemId) {
         
         const preview = document.getElementById('edit-photo-preview');
         if (item.photo) {
-            preview.innerHTML = `<img src="${item.photo}" alt="Preview" style="max-width: 100px; border-radius: 8px;">`;
+            preview.innerHTML = `<img src="${API_CONFIG.photoUrl}${item.photo}" alt="Preview" style="max-width: 100px; border-radius: 8px;">`;
         } else {
             preview.innerHTML = '';
         }
@@ -690,7 +686,7 @@ function displayOrderHistory(orders) {
             
             const itemsHtml = order.items.map(item => {
                 const imageContent = item.photo 
-                    ? `<img src="${item.photo}" alt="${item.name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 4px;">`
+                    ? `<img src="${API_CONFIG.photoUrl}${item.photo}" alt="${item.name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 4px;">`
                     : `<div class="item-placeholder">${item.category.charAt(0)}</div>`;
                 
                 return `
@@ -811,7 +807,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Form event listeners
     document.getElementById('add-item-form').addEventListener('submit', addNewItem);
     document.getElementById('edit-item-form').addEventListener('submit', updateItem);
-    document.getElementById('planifier-form').addEventListener('submit', submitPlanifierForm);
+    //document.getElementById('planifier-form').addEventListener('submit', submitPlanifierForm);
     
     // Photo preview handlers
     document.getElementById('item-photo').addEventListener('change', function(e) {
@@ -847,17 +843,7 @@ document.addEventListener('DOMContentLoaded', () => {
 document.addEventListener('click', (e) => {
     if (e.target.classList.contains('modal')) {
         e.target.classList.remove('show');
-    }
-    
-    // Close menu when clicking outside
-    if (!e.target.closest('.menu-btn') && !e.target.closest('.main-menu')) {
-        const mainMenu = document.getElementById('main-menu');
-        const menuBtn = document.getElementById('menu-btn');
-        if (mainMenu.classList.contains('open') && !editMode && !deleteMode) {
-            mainMenu.classList.remove('open');
-            menuBtn.classList.remove('active');
-        }
-    }
+    }    
 });
 
 function showPlanifier() {
@@ -966,7 +952,7 @@ function openPlanifierForm(id=null){
                 html += `
                     <label style='display:flex;flex-direction:column;align-items:center;width:90px;cursor:pointer;'>
                         <input type='checkbox' name='planifier-items' value='${item.id}' ${selectedItems.includes(item.id)?'checked':''} style='margin-bottom:4px;'>
-                        ${item.photo ? `<img src='${item.photo}' alt='${item.name}' style='width:70px;height:70px;object-fit:cover;border-radius:8px;margin-bottom:4px;'>` : `<div style='width:70px;height:70px;background:#eee;border-radius:8px;margin-bottom:4px;display:flex;align-items:center;justify-content:center;'>${item.category.charAt(0)}</div>`}
+                        ${item.photo ? `<img src='${API_CONFIG.photoUrl}${item.photo}' alt='${item.name}' style='width:70px;height:70px;object-fit:cover;border-radius:8px;margin-bottom:4px;'>` : `<div style='width:70px;height:70px;background:#eee;border-radius:8px;margin-bottom:4px;display:flex;align-items:center;justify-content:center;'>${item.category.charAt(0)}</div>`}
                         <span style='font-size:13px;text-align:center;'>${item.name}</span>
                     </label>
                 `;
@@ -985,6 +971,7 @@ function closePlanifierForm(){
 }
 
 function submitPlanifierForm(e){
+
     e.preventDefault();
     const nom = document.getElementById('planifier-nom').value.trim();
     const desc = document.getElementById('planifier-desc').value;
