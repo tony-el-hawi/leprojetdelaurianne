@@ -54,7 +54,7 @@ class ItemList(Resource):
     def post(self):
         """Crée un nouvel item (supporte l'upload de photo en base64 ou lien direct)"""
         data = api.payload
-        item_id = str(uuid.uuid4())
+        item_id = "item_" + str(uuid.uuid4())
         photo_url = data.get('photo')
         tag_id = data.get('tag_id')
         hanger_id = data.get('hanger_id')
@@ -136,7 +136,7 @@ class HangerList(Resource):
     def post(self):
         """Crée un nouveau cintre"""
         data = api.payload
-        hanger_id = str(uuid.uuid4())
+        hanger_id = "hanger_" + str(uuid.uuid4())
         conn = get_db()
         conn.execute(
             'INSERT INTO hangers (id, tag_id, mqtt_topic) VALUES (?, ?, ?)',
@@ -272,7 +272,7 @@ class OrderList(Resource):
     def post(self):
         """Crée une nouvelle commande (items est une liste JSON)"""
         data = api.payload
-        order_id = str(uuid.uuid4())
+        order_id = "order_" + str(uuid.uuid4())
         items_list = data.get('items', [])
         timestamp = datetime.now().isoformat() + 'Z'
         status = 'En cours'
