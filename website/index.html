@@ -40,7 +40,7 @@
             <div id="planifier" class="tab-content active">
                 <div class="innerPage-title">Planifier mes tenus</div>
                 <div class="innerPage-body">
-                    
+                    <div id="planifier-events-list"></div>
                 </div>
                 <div class="innerPage-footer">
                     <button class="btn-primary" onclick="openPlanifierForm()">+ Préparer une tenue</button>
@@ -99,6 +99,12 @@
                     </button>
                 </div>
                 
+                <div class="quick-filters">
+                    <button class="add-btn" onclick="setEditMode(); event.stopPropagation();">
+                        Edit
+                    </button>
+                </div>
+
                 <div class="quick-filters">
                     <button class="quick-filter active" onclick="filterByCategory('all')">Tout</button>
                     <button class="quick-filter" onclick="filterByCategory('Jupes')">Jupes</button>
