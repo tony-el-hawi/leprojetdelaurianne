@@ -34,6 +34,12 @@ python .\api\tools\import-db-items-json.py
 python .\api\tools\import-db-orders-json.py
 ```
 
+for mac
+```sh
+pip3 install requests
+python3 ./api/tools/import-db-items-json.py
+```
+
 Cela permet d'ajouter les données nécessaires dans la base SQLite.
 
 ---
