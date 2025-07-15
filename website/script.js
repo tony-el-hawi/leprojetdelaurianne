@@ -5,9 +5,9 @@ const API_CONFIG = {
     entityId: 'light.headlight'
 };
 
-API_CONFIG.baseUrl = `http://localhost:5000/items`;
-API_CONFIG.ordersUrl = `http://localhost:5000/orders`;
-API_CONFIG.photoUrl = `http://localhost:5000/`;
+API_CONFIG.baseUrl = `http://localhost:5080/items`;
+API_CONFIG.ordersUrl = `http://localhost:5080/orders`;
+API_CONFIG.photoUrl = `http://localhost:5080/`;
 
 // State Management
 let clothingItems = [];
