@@ -5,8 +5,9 @@ const API_CONFIG = {
     entityId: 'light.headlight'
 };
 
-API_CONFIG.baseUrl = `https://${API_CONFIG.apiId}.execute-api.eu-west-1.amazonaws.com/prod/items`;
-API_CONFIG.ordersUrl = `https://${API_CONFIG.apiId}.execute-api.eu-west-1.amazonaws.com/prod/orders`;
+API_CONFIG.baseUrl = `http://localhost:5000/items`;
+API_CONFIG.ordersUrl = `http://localhost:5000/orders`;
+API_CONFIG.photoUrl = `http://localhost:5000/`;
 
 // State Management
 let clothingItems = [];
@@ -289,7 +290,7 @@ function displayItems() {
     grid.innerHTML = filteredItems.map(item => {
         const inCart = isInCart(item.id);
         const imageContent = item.photo 
-            ? `<img src="${item.photo}" alt="${item.name}">`
+            ? `<img src="${API_CONFIG.photoUrl}${item.photo}" alt="${item.name}">`
             : `<div class="item-placeholder">${item.category.charAt(0)}</div>`;
         
         const cardClass = editMode ? 'item-card edit-mode' : deleteMode ? 'item-card delete-mode' : 'item-card';
