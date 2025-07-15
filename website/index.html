@@ -8,12 +8,14 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer">
 </head>
 <body>
     <div class="app">
         <!-- Header -->
         <header class="header">
             <div class="header-content">
+                <!--
                 <h1 class="logo">LPDL</h1>
                 <div class="header-actions">
                     <button class="menu-btn" onclick="toggleMenu()" id="menu-btn">
@@ -23,8 +25,43 @@
                         </div>
                     </button>
                 </div>
+                -->
             </div>
         </header>
+
+        <!-- Planifier Section (just below header) -->
+        <div id="planifier" class="planifier-section" style="display:none;">
+            <div class="planifier-header">
+                <h2>Tenues</h2>
+                <p>Sélection vêtements</p>
+            </div>
+            <div id="planifier-events-list"></div>
+            <button class="btn-primary planifier-btn" onclick="openPlanifierForm()">+ Créer une tenue</button>
+            <div id="planifier-form-modal" class="modal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3 id="planifier-form-title">Créer une tenue</h3>
+                        <button class="close-btn" onclick="closePlanifierForm()">×</button>
+                    </div>
+                    <form id="planifier-form" class="item-form" onsubmit="submitPlanifierForm(event)">
+                        <div class="form-group">
+                            <input type="text" id="planifier-nom" placeholder="Nom de la tenue" required>
+                        </div>
+                        <div class="form-group">
+                            <input type="text" id="planifier-desc" placeholder="Description (facultatif)">
+                        </div>
+                        <div class="form-group">
+                            <label for="planifier-items-select" style="font-weight:500;">Sélectionner les vêtements à associer :</label>
+                            <div id="planifier-items-select"></div>
+                        </div>
+                        <div class="modal-actions">
+                            <button type="button" class="btn-secondary" onclick="closePlanifierForm()">Annuler</button>
+                            <button type="submit" class="btn-primary">Valider</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
 
         <!-- Main Menu -->
         <div id="main-menu" class="main-menu">
@@ -34,7 +71,6 @@
             </div>
             <div class="menu-actions">
                 <button onclick="showOrderHistory()" class="menu-action">
-                    Historique
                 </button>
                 <button onclick="updateHomeAssistantToken()" class="menu-action">
                     Home Assistant
@@ -48,24 +84,57 @@
                 <button onclick="setDeleteMode()" class="menu-action">
                     Supprimer des articles
                 </button>
+                <button onclick="showPlanifier()" class="menu-action">
+                    Planifier une tenue
+                </button>
             </div>
         </div>
 
         <!-- Bottom Navigation -->
         <nav class="bottom-nav">
-            <button class="nav-btn active" onclick="showTab('catalogue')" data-tab="catalogue">
-                <span class="nav-label">Garde-robe</span>
+            <button class="nav-btn active" onclick="showTab('planifier')" data-tab="planifier">
+                <i class="nav-icon fa-solid fa-house"></i>
+                <span class="nav-label">Planifier</span>
             </button>
-            <button class="nav-btn" onclick="showTab('panier')" data-tab="panier">
-                <span class="nav-label">Panier</span>
-                <span id="cart-badge" class="cart-badge"></span>
+            <button class="nav-btn" onclick="showTab('organiser')" data-tab="organiser">
+                <i class="nav-icon fa-regular fa-compass"></i>
+                <span class="nav-label">Organiser</span>
+            </button>
+            <button class="nav-btn" onclick="showTab('liste')" data-tab="liste">
+                <i class="nav-icon fa-solid fa-list"></i>
+                <span class="nav-label">Liste</span>
             </button>
         </nav>
 
+
         <!-- Main Content -->
         <main class="main-content">
+            <!-- Accéder aux ensembles prédéfinis-->
+            <div id="planifier" class="tab-content active">
+                <div class="innerPage-title">Planifier mes tenus</div>
+                <div class="innerPage-body">
+                    
+                </div>
+                <div class="innerPage-footer">
+                    <button class="btn-primary" onclick="showAddItemModal()">+ Préparer une tenue</button>
+                </div>
+            </div>
+
+            <!-- Organiser ses tenus (ajout/suppression habits)-->
+            <div id="organiser" class="tab-content">
+                <div class="innerPage-title">Organiser mon dressing</div>
+                <div class="innerPage-body">
+                    
+                </div>
+                <div class="innerPage-footer">
+                    <button class="btn-secondary-blue" onclick="setDeleteMode()">- Supprimer un habits</button>
+                    <button class="btn-primary" onclick="showAddItemModal()">+ Ajouter un habits</button>
+                </div>
+            </div>
+
+
             <!-- Catalogue Tab -->
-            <div id="catalogue" class="tab-content active">
+            <div id="liste" class="tab-content">
                 <div class="search-bar">
                     <div class="search-input-container">
                         <span class="search-icon">🔎</span>
@@ -97,7 +166,7 @@
                     <div class="empty-icon">Panier vide</div>
                     <h3>Votre panier est vide</h3>
                     <p>Ajoutez des articles depuis votre garde-robe</p>
-                    <button class="btn-primary" onclick="showTab('catalogue')">Explorer</button>
+                    <button class="btn-primary" onclick="showTab('liste')">Explorer</button>
                 </div>
 
                 <div id="cart-items" class="cart-items"></div>

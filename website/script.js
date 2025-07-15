@@ -32,12 +32,6 @@ function setHomeAssistantToken(token) {
 }
 
 function promptForToken() {
-    const token = prompt('Entrez votre token Home Assistant pour connecter votre cintre:');
-    if (token) {
-        setHomeAssistantToken(token);
-        showToast('Token configuré avec succès!');
-        return token;
-    }
     return null;
 }
 
@@ -817,6 +811,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Form event listeners
     document.getElementById('add-item-form').addEventListener('submit', addNewItem);
     document.getElementById('edit-item-form').addEventListener('submit', updateItem);
+    document.getElementById('planifier-form').addEventListener('submit', submitPlanifierForm);
     
     // Photo preview handlers
     document.getElementById('item-photo').addEventListener('change', function(e) {
@@ -864,3 +859,177 @@ document.addEventListener('click', (e) => {
         }
     }
 });
+
+function showPlanifier() {
+    // Masquer les autres sections principales
+    document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+    document.getElementById('planifier').style.display = 'flex';
+    // Masquer le catalogue et le panier
+    document.getElementById('catalogue').classList.remove('active');
+    document.getElementById('panier').classList.remove('active');
+    // Fermer le menu principal
+    document.getElementById('main-menu').classList.remove('open');
+}
+
+// Pour revenir à la vue catalogue/panier, il faudra masquer planifier
+function hidePlanifier() {
+    document.getElementById('planifier').style.display = 'none';
+    document.getElementById('catalogue').classList.add('active');
+}
+
+// Planifier - gestion des événements
+let planifierEvents = [
+    {
+        id: 1,
+        date: '2025-07-04',
+        desc: 'Rendez-vous coiffeur',
+        items: []
+    }
+];
+let selectedPlanifierId = null;
+let editingPlanifierId = null;
+
+function renderPlanifier() {
+    const listDiv = document.getElementById('planifier-events-list');
+    let html = '';
+    // Afficher les tenues dans l'ordre d'ajout (plus récent en haut)
+    const sortedTenues = [...planifierEvents].reverse();
+    sortedTenues.forEach(tenue => {
+        html += `
+        <div class="planifier-card" data-id="${tenue.id}" onclick="selectPlanifierEvent(${tenue.id})" style="border:${selectedPlanifierId===tenue.id?'2px solid #667eea':'none'};">
+            <div class="planifier-card-content">
+                <span class="planifier-icon">🖊️</span>
+                <div>
+                    <div class="planifier-nom" style="font-weight:600;">${tenue.nom}</div>
+                    ${tenue.desc ? `<div class="planifier-desc">${tenue.desc}</div>` : ''}
+                </div>
+            </div>
+            <div class="planifier-card-actions">
+                <button class="edit-plan-btn" title="Modifier" onclick="event.stopPropagation();openPlanifierForm(${tenue.id})">&#9998;</button>
+                <button class="lamp-plan-btn" title="Allumer" onclick="event.stopPropagation();handleLampForTenue(${tenue.id})" style="margin-left:4px;background:none;border:none;padding:0;font-size:20px;">💡</button>
+                <button class="delete-plan-btn" title="Supprimer" onclick="event.stopPropagation();deletePlanifierEvent(${tenue.id})" style="margin-left:4px;">&#128465;</button>
+            </div>
+        </div>
+        `;
+        if(selectedPlanifierId===tenue.id){
+            html += `<div class='planifier-items'><h4>Vêtements associés :</h4>`;
+            if(tenue.items.length===0){
+                html += `<div style='color:#6c757d;'>Aucun vêtement sélectionné</div>`;
+            }else{
+                html += tenue.items.map(itemId=>{
+                    const item = clothingItems.find(i=>i.id===itemId);
+                    if(!item) return '';
+                    return `<div class='planifier-item'>${item.name} <button onclick='removeItemFromEvent(${tenue.id},"${itemId}");event.stopPropagation();' style='margin-left:8px;'>×</button></div>`;
+                }).join('');
+            }
+            html += `<button class='btn-primary' style='margin-top:10px;' onclick='event.stopPropagation();showCatalogueForEvent(${tenue.id})'>Ajouter/modifier les vêtements</button></div>`;
+        }
+    });
+    listDiv.innerHTML = html;
+}
+
+function openPlanifierForm(id=null){
+    const modal = document.getElementById('planifier-form-modal');
+    const form = document.getElementById('planifier-form');
+    const title = document.getElementById('planifier-form-title');
+    const itemsDiv = document.getElementById('planifier-items-select');
+    editingPlanifierId = id;
+    let selectedItems = [];
+    if(id){
+        const tenue = planifierEvents.find(e=>e.id===id);
+        if(tenue){
+            document.getElementById('planifier-nom').value = tenue.nom;
+            document.getElementById('planifier-desc').value = tenue.desc || '';
+            selectedItems = tenue.items || [];
+            title.textContent = 'Modifier la tenue';
+        }
+    }else{
+        form.reset();
+        title.textContent = 'Créer une tenue';
+        editingPlanifierId = null;
+        selectedItems = [];
+    }
+    // Générer la liste des vêtements du catalogue avec checkbox, groupés par catégorie
+    let html = '';
+    if(clothingItems.length === 0){
+        html += '<div style="color:#888;">Aucun vêtement dans le catalogue</div>';
+    }else{
+        const categories = {};
+        clothingItems.forEach(item => {
+            if (!categories[item.category]) categories[item.category] = [];
+            categories[item.category].push(item);
+        });
+        html += '<div style="max-height:180px;overflow:auto;">';
+        Object.keys(categories).forEach(cat => {
+            html += `<div style='margin-bottom:10px;'><div style='font-weight:600;margin-bottom:4px;'>${cat}</div><div style='display:flex;flex-wrap:wrap;gap:8px;'>`;
+            categories[cat].forEach(item => {
+                html += `
+                    <label style='display:flex;flex-direction:column;align-items:center;width:90px;cursor:pointer;'>
+                        <input type='checkbox' name='planifier-items' value='${item.id}' ${selectedItems.includes(item.id)?'checked':''} style='margin-bottom:4px;'>
+                        ${item.photo ? `<img src='${item.photo}' alt='${item.name}' style='width:70px;height:70px;object-fit:cover;border-radius:8px;margin-bottom:4px;'>` : `<div style='width:70px;height:70px;background:#eee;border-radius:8px;margin-bottom:4px;display:flex;align-items:center;justify-content:center;'>${item.category.charAt(0)}</div>`}
+                        <span style='font-size:13px;text-align:center;'>${item.name}</span>
+                    </label>
+                `;
+            });
+            html += '</div></div>';
+        });
+        html += '</div>';
+    }
+    itemsDiv.innerHTML = html;
+    modal.classList.add('show');
+}
+
+function closePlanifierForm(){
+    document.getElementById('planifier-form-modal').classList.remove('show');
+    editingPlanifierId = null;
+}
+
+function submitPlanifierForm(e){
+    e.preventDefault();
+    const nom = document.getElementById('planifier-nom').value.trim();
+    const desc = document.getElementById('planifier-desc').value;
+    const checked = Array.from(document.querySelectorAll("#planifier-items-select input[name='planifier-items']:checked")).map(cb=>cb.value);
+    // Vérifier unicité du nom
+    let isDuplicate = false;
+    if(editingPlanifierId){
+        isDuplicate = planifierEvents.some(t => t.nom === nom && t.id !== editingPlanifierId);
+    }else{
+        isDuplicate = planifierEvents.some(t => t.nom === nom);
+    }
+    if(isDuplicate){
+        showToast('Ce nom de tenue est déjà utilisé. Veuillez en choisir un autre.');
+        document.getElementById('planifier-nom').focus();
+        return;
+    }
+    if(editingPlanifierId){
+        const tenue = planifierEvents.find(e=>e.id===editingPlanifierId);
+        if(tenue){
+            tenue.nom = nom;
+            tenue.desc = desc;
+            tenue.items = checked;
+        }
+    }else{
+        const newId = planifierEvents.length ? Math.max(...planifierEvents.map(e => e.id)) + 1 : 1;
+        planifierEvents.push({ id: newId, nom, desc, items: checked });
+    }
+    closePlanifierForm();
+    renderPlanifier();
+    editingPlanifierId = null;
+}
+
+function deletePlanifierEvent(id) {
+    const idx = planifierEvents.findIndex(e => e.id === id);
+    if (idx === -1) return;
+    const tenue = planifierEvents[idx];
+    if (confirm(`Supprimer la tenue « ${tenue.nom} » ?`)) {
+        planifierEvents.splice(idx, 1);
+        if (selectedPlanifierId === id) selectedPlanifierId = null;
+        renderPlanifier();
+        showToast('Tenue supprimée');
+    }
+}
+
+// Affichage initial de la section planifier
+if (document.getElementById('planifier-events-list')) {
+    renderPlanifier();
+}
