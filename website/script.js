@@ -66,6 +66,12 @@ async function init() {
     hideLoading();
 }
 
+/* =========================================================
+ * ITEMS
+ * =========================================================
+ */
+
+
 // Data Loading
 async function loadItems() {
     try {
@@ -597,6 +603,11 @@ function fileToBase64(file) {
     });
 }
 
+/* =========================================================
+ * Order Management
+ * =========================================================
+ */
+
 // Order Management
 async function placeOrder() {
     if (cart.length === 0) return;
@@ -727,6 +738,13 @@ function closeOrderHistory() {
     document.getElementById('order-history-modal').classList.remove('show');
 }
 
+
+/* =========================================================
+ * MISC Control
+ * =========================================================
+ */
+
+
 // Modals
 function showSuccessModal() {
     document.getElementById('success-modal').classList.add('show');
@@ -845,6 +863,13 @@ document.addEventListener('click', (e) => {
         e.target.classList.remove('show');
     }    
 });
+
+
+/* =========================================================
+ * Planifier Management
+ * =========================================================
+ */
+
 
 function showPlanifier() {
     // Masquer les autres sections principales
