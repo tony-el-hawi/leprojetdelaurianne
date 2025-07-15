@@ -1,4 +1,5 @@
 from flask import Flask, request
+from flask_cors import CORS
 from flask_restx import Api, Resource, fields
 from datetime import datetime
 import uuid
@@ -6,11 +7,13 @@ import sqlite3
 import json
 import os
 
+from models import item_model_def, item_model_db_init, order_model_def, order_model_db_init
 
 # Dossier photos accessible en static
 PHOTOS_DIR = os.path.join(os.path.dirname(__file__), '..', 'photos')
 app = Flask(__name__, static_url_path='/photos', static_folder=PHOTOS_DIR)
-api = Api(app, title='Le Projet de Laurianne API', description='API locale avec Swagger/OpenAPI', doc='/swagger/')
+CORS(app)
+api = Api(app, title='Le Dressing de Laurianne API', description='API locale avec Swagger/OpenAPI', doc='/swagger/')
 
 DB_PATH = os.path.join(os.path.dirname(__file__), '..', 'database.sqlite3')
 
@@ -19,22 +22,8 @@ def get_db():
     conn.row_factory = sqlite3.Row
     return conn
 
-item_model = api.model('Item', {
-    'id': fields.String,
-    'name': fields.String,
-    'category': fields.String,
-    'color': fields.String,
-    'size': fields.String,
-    'photo': fields.String
-})
-
-order_model = api.model('Order', {
-    'id': fields.String,
-    'items': fields.List(fields.String),
-    'timestamp': fields.String,
-    'status': fields.String
-})
-
+item_model = api.model('Item', item_model_def)
+order_model = api.model('Order', order_model_def)
 
 @api.route('/items')
 class ItemList(Resource):
@@ -133,21 +122,21 @@ class OrderList(Resource):
     @api.expect(order_model)
     @api.marshal_with(order_model, code=201)
     def post(self):
-        """Crée une nouvelle commande"""
+        """Crée une nouvelle commande (items est une liste JSON)"""
         data = api.payload
         order_id = str(uuid.uuid4())
-        items_json = json.dumps(data.get('items', []))
+        items_list = data.get('items', [])
         timestamp = datetime.now().isoformat() + 'Z'
         status = 'En cours'
         conn = get_db()
         conn.execute(
             'INSERT INTO orders (id, items, timestamp, status) VALUES (?, ?, ?, ?)',
-            (order_id, items_json, timestamp, status)
+            (order_id, json.dumps(items_list), timestamp, status)
         )
         conn.commit()
         order = {
             'id': order_id,
-            'items': data.get('items', []),
+            'items': items_list,
             'timestamp': timestamp,
             'status': status
         }
@@ -156,23 +145,11 @@ class OrderList(Resource):
 
 def init_db():
     conn = sqlite3.connect(DB_PATH)
-    conn.execute('''CREATE TABLE IF NOT EXISTS items (
-        id TEXT PRIMARY KEY,
-        name TEXT NOT NULL,
-        category TEXT,
-        color TEXT,
-        size TEXT,
-        photo TEXT
-    )''')
-    conn.execute('''CREATE TABLE IF NOT EXISTS orders (
-        id TEXT PRIMARY KEY,
-        timestamp TEXT,
-        status TEXT,
-        items TEXT
-    )''')
+    conn.execute(item_model_db_init)
+    conn.execute(order_model_db_init)
     conn.commit()
     conn.close()
 
 if __name__ == '__main__':
     init_db()
-    app.run(debug=True)
+    app.run(debug=True, host='0.0.0.0')
