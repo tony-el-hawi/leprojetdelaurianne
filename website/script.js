@@ -32,12 +32,6 @@ function setHomeAssistantToken(token) {
 }
 
 function promptForToken() {
-    const token = prompt('Entrez votre token Home Assistant pour connecter votre cintre:');
-    if (token) {
-        setHomeAssistantToken(token);
-        showToast('Token configuré avec succès!');
-        return token;
-    }
     return null;
 }
 
