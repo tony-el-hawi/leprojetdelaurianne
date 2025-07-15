@@ -1,4 +1,5 @@
-# Instructions pour lancer l'API Flask localement
+
+# Utilisation locale
 
 1. Installez les dépendances :
    ```powershell
@@ -15,5 +16,13 @@
 3. Accédez à la documentation Swagger/OpenAPI :
    Ouvrez http://localhost:5000/swagger/ dans votre navigateur.
 
----
-Ce projet ne dépend plus d'AWS ou de Terraform. Toute la logique API doit être développée dans `app/main.py` et les modules Python locaux. La persistance des données se fait dans une base SQL locale (SQLite par défaut).
+# Utilisation avec Docker
+
+1. Lancez l'API avec Docker Compose :
+   ```powershell
+   docker-compose up --build
+   ```
+
+   - Les fichiers et la base sont persistés sur votre machine via les volumes.
+   - L'API est accessible sur http://localhost:5000
+   - La documentation Swagger est disponible sur http://localhost:5000/swagger/

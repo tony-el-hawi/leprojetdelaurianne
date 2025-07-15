@@ -1,9 +1,12 @@
 import json
 import requests
+import os
 
 API_URL_ORDERS = "http://localhost:5000/orders"
 
-with open("db-orders-history.json", "r", encoding="utf-8") as f:
+script_dir = os.path.dirname(os.path.abspath(__file__))
+json_path = os.path.join(script_dir, "db-orders-history.json")
+with open(json_path, "r", encoding="utf-8") as f:
     orders = json.load(f)
 
 for order in orders:
