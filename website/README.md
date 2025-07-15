@@ -39,6 +39,19 @@ Deploy to AWS Amplify:
 2. Use the provided `amplify.yml` configuration
 3. Deploy automatically on every push
 
+Deploy with Docker:
+
+1. Build the Docker image:
+   ```powershell
+   docker-compose build
+   ```
+2. Run the container locally:
+   ```powershell
+   docker-compose up
+   ```
+3. Your static site will be available at http://localhost:8080
+4. You can deploy this container to any cloud or server supporting Docker.
+
 ### 📱 Mobile Experience
 
 - **Touch Optimized**: Large touch targets and swipe gestures

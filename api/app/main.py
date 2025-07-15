@@ -144,6 +144,8 @@ class OrderList(Resource):
         return order, 201
 
 def init_db():
+    if not os.path.exists(DB_PATH):
+        open(DB_PATH, 'a').close()
     conn = sqlite3.connect(DB_PATH)
     conn.execute(item_model_db_init)
     conn.execute(order_model_db_init)
