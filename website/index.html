@@ -14,54 +14,8 @@
     <div class="app">
         <!-- Header -->
         <header class="header">
-            <div class="header-content">
-                <!--
-                <h1 class="logo">LPDL</h1>
-                <div class="header-actions">
-                    <button class="menu-btn" onclick="toggleMenu()" id="menu-btn">
-                        <div class="menu-lines">
-                            <span></span>
-                            <span></span>
-                        </div>
-                    </button>
-                </div>
-                -->
-            </div>
+            <div class="header-content"></div>
         </header>
-
-        <!-- Planifier Section (just below header) -->
-        <div id="planifier" class="planifier-section" style="display:none;">
-            <div class="planifier-header">
-                <h2>Tenues</h2>
-                <p>Sélection vêtements</p>
-            </div>
-            <div id="planifier-events-list"></div>
-            <button class="btn-primary planifier-btn" onclick="openPlanifierForm()">+ Créer une tenue</button>
-            <div id="planifier-form-modal" class="modal">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h3 id="planifier-form-title">Créer une tenue</h3>
-                        <button class="close-btn" onclick="closePlanifierForm()">×</button>
-                    </div>
-                    <form id="planifier-form" class="item-form" onsubmit="submitPlanifierForm(event)">
-                        <div class="form-group">
-                            <input type="text" id="planifier-nom" placeholder="Nom de la tenue" required>
-                        </div>
-                        <div class="form-group">
-                            <input type="text" id="planifier-desc" placeholder="Description (facultatif)">
-                        </div>
-                        <div class="form-group">
-                            <label for="planifier-items-select" style="font-weight:500;">Sélectionner les vêtements à associer :</label>
-                            <div id="planifier-items-select"></div>
-                        </div>
-                        <div class="modal-actions">
-                            <button type="button" class="btn-secondary" onclick="closePlanifierForm()">Annuler</button>
-                            <button type="submit" class="btn-primary">Valider</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
 
         <!-- Main Menu -->
         <div id="main-menu" class="main-menu">
@@ -116,8 +70,36 @@
                     
                 </div>
                 <div class="innerPage-footer">
-                    <button class="btn-primary" onclick="showAddItemModal()">+ Préparer une tenue</button>
+                    <button class="btn-primary" onclick="openPlanifierForm()">+ Préparer une tenue</button>
                 </div>
+
+                <!-- Ajouter un ensemble predefinit -->
+                <div id="planifier-form-modal" class="modal">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h3 id="planifier-form-title">Créer une tenue</h3>
+                            <button class="close-btn" onclick="closePlanifierForm()">×</button>
+                        </div>
+                        <form id="planifier-form" class="item-form" onsubmit="submitPlanifierForm(event)">
+                            <div class="form-group">
+                                <input type="text" id="planifier-nom" placeholder="Nom de la tenue" required>
+                            </div>
+                            <div class="form-group">
+                                <input type="text" id="planifier-desc" placeholder="Description (facultatif)">
+                            </div>
+                            <div class="form-group">
+                                <label for="planifier-items-select" style="font-weight:500;">Sélectionner les vêtements à associer :</label>
+                                <div id="planifier-items-select"></div>
+                            </div>
+                            <div class="modal-actions">
+                                <button type="button" class="btn-secondary" onclick="closePlanifierForm()">Annuler</button>
+                                <button type="submit" class="btn-primary">Valider</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
             </div>
 
             <!-- Organiser ses tenus (ajout/suppression habits)-->
