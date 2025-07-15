@@ -8,12 +8,14 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer">
 </head>
 <body>
     <div class="app">
         <!-- Header -->
         <header class="header">
             <div class="header-content">
+                <!--
                 <h1 class="logo">LPDL</h1>
                 <div class="header-actions">
                     <button class="menu-btn" onclick="toggleMenu()" id="menu-btn">
@@ -23,6 +25,7 @@
                         </div>
                     </button>
                 </div>
+                -->
             </div>
         </header>
 
@@ -68,7 +71,6 @@
             </div>
             <div class="menu-actions">
                 <button onclick="showOrderHistory()" class="menu-action">
-                    Historique
                 </button>
                 <button onclick="updateHomeAssistantToken()" class="menu-action">
                     Home Assistant
@@ -90,19 +92,49 @@
 
         <!-- Bottom Navigation -->
         <nav class="bottom-nav">
-            <button class="nav-btn active" onclick="showTab('catalogue')" data-tab="catalogue">
-                <span class="nav-label">Garde-robe</span>
+            <button class="nav-btn active" onclick="showTab('planifier')" data-tab="planifier">
+                <i class="nav-icon fa-solid fa-house"></i>
+                <span class="nav-label">Planifier</span>
             </button>
-            <button class="nav-btn" onclick="showTab('panier')" data-tab="panier">
-                <span class="nav-label">Panier</span>
-                <span id="cart-badge" class="cart-badge"></span>
+            <button class="nav-btn" onclick="showTab('organiser')" data-tab="organiser">
+                <i class="nav-icon fa-regular fa-compass"></i>
+                <span class="nav-label">Organiser</span>
+            </button>
+            <button class="nav-btn" onclick="showTab('liste')" data-tab="liste">
+                <i class="nav-icon fa-solid fa-list"></i>
+                <span class="nav-label">Liste</span>
             </button>
         </nav>
 
+
         <!-- Main Content -->
         <main class="main-content">
+            <!-- Accéder aux ensembles prédéfinis-->
+            <div id="planifier" class="tab-content active">
+                <div class="innerPage-title">Planifier mes tenus</div>
+                <div class="innerPage-body">
+                    
+                </div>
+                <div class="innerPage-footer">
+                    <button class="btn-primary" onclick="showAddItemModal()">+ Préparer une tenue</button>
+                </div>
+            </div>
+
+            <!-- Organiser ses tenus (ajout/suppression habits)-->
+            <div id="organiser" class="tab-content">
+                <div class="innerPage-title">Organiser mon dressing</div>
+                <div class="innerPage-body">
+                    
+                </div>
+                <div class="innerPage-footer">
+                    <button class="btn-secondary-blue" onclick="setDeleteMode()">- Supprimer un habits</button>
+                    <button class="btn-primary" onclick="showAddItemModal()">+ Ajouter un habits</button>
+                </div>
+            </div>
+
+
             <!-- Catalogue Tab -->
-            <div id="catalogue" class="tab-content active">
+            <div id="liste" class="tab-content">
                 <div class="search-bar">
                     <div class="search-input-container">
                         <span class="search-icon">🔎</span>
@@ -134,7 +166,7 @@
                     <div class="empty-icon">Panier vide</div>
                     <h3>Votre panier est vide</h3>
                     <p>Ajoutez des articles depuis votre garde-robe</p>
-                    <button class="btn-primary" onclick="showTab('catalogue')">Explorer</button>
+                    <button class="btn-primary" onclick="showTab('liste')">Explorer</button>
                 </div>
 
                 <div id="cart-items" class="cart-items"></div>
