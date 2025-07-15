@@ -6,6 +6,7 @@ import uuid
 import sqlite3
 import json
 import os
+import time
 
 from models import item_model_def, item_model_db_init, order_model_def, order_model_db_init, hanger_model_def, hanger_model_db_init
 
@@ -25,9 +26,17 @@ def get_db():
 item_model = api.model('Item', item_model_def)
 order_model = api.model('Order', order_model_def)
 hanger_model = api.model('Hanger', hanger_model_def)
+
 tag_input_model = api.model('TagInput', {
     'tag_id': fields.String(example="Identifiant NFC/RFID", description="Identifiant du tag lu")
 })
+tag_add_model = api.model('TagAdd', {
+    'item_id': fields.String(example="Identifiant d'un Item", description="Identifiant de l'item à associer à un tag")
+})
+
+
+# Variable globale pour stocker l'item_id en attente
+TAG_WAIT_ITEM_ID = None
 
 @api.route('/items')
 class ItemList(Resource):
@@ -173,11 +182,74 @@ class Hanger(Resource):
 class TagReader(Resource):
     @api.expect(tag_input_model)
     def post(self):
-        """Reçoit un tag lu par un lecteur externe et l'affiche (logique à venir)"""
+        """Reçoit un tag lu par un lecteur externe"""
         data = api.payload
         tag_id = data.get('tag_id')
-        app.logger.error(f"Tag reçu : {tag_id}")
-        return {'message': f'Tag reçu : {tag_id}'}, 200
+        app.logger.info(f"Tag reçu : {tag_id}")
+
+        global TAG_WAIT_ITEM_ID
+        global ITEM_FOUND_ID
+        global HANGER_FOUND_ID
+        message = ''
+        if TAG_WAIT_ITEM_ID is not None:
+            conn = get_db()
+            conn.execute('UPDATE items SET tag_id = ? WHERE id = ?', (tag_id, TAG_WAIT_ITEM_ID))
+            conn.commit()
+            conn.close()
+            TAG_WAIT_ITEM_ID = None
+            app.logger.info(f"Tag {tag_id} associé à l'item {TAG_WAIT_ITEM_ID}")
+            message = {
+                "status": "association",
+                "tag_id": tag_id,
+                "item_id": TAG_WAIT_ITEM_ID
+            }
+        else:
+            conn = get_db()
+            cur = conn.execute('SELECT id FROM items WHERE tag_id = ?', (tag_id,))
+            item_row = cur.fetchone()
+            if item_row:
+                ITEM_FOUND_ID = item_row['id']
+                app.logger.info(f"Tag {tag_id} trouvé dans items, id: {ITEM_FOUND_ID}")
+                message = {
+                    "status": "wait_hanger",
+                    "item_id": ITEM_FOUND_ID
+                }
+            else:
+                cur = conn.execute('SELECT id FROM hangers WHERE tag_id = ?', (tag_id,))
+                hanger_row = cur.fetchone()
+                if hanger_row:
+                    HANGER_FOUND_ID = hanger_row['id']
+                    app.logger.info(f"Tag {tag_id} trouvé dans hangers, id: {HANGER_FOUND_ID}")
+                    message = {
+                        "status": "wait_item",
+                        "hanger_id": HANGER_FOUND_ID
+                    }
+            conn.close()
+            if ITEM_FOUND_ID is not None and HANGER_FOUND_ID is not None:
+                conn = get_db()
+                conn.execute('UPDATE items SET hanger_id = ? WHERE id = ?', (HANGER_FOUND_ID, ITEM_FOUND_ID))
+                conn.commit()
+                conn.close()
+                ITEM_FOUND_ID = None
+                HANGER_FOUND_ID = None
+                message = {
+                    "status": "association_complete",
+                    "item_id": ITEM_FOUND_ID,
+                    "hanger_id": HANGER_FOUND_ID
+                }
+        return message, 200
+
+    @api.expect(tag_add_model)
+    def get(self):
+        """Reçoit un id d'item, le stocke en variable globale, et attend que la variable soit remise à null avant de répondre"""
+        global TAG_WAIT_ITEM_ID
+        item_id = request.args.get('item_id')
+        TAG_WAIT_ITEM_ID = item_id
+        app.logger.info(f"Item en attente de tag (GET /tag): {TAG_WAIT_ITEM_ID}")
+        # Attente active jusqu'à ce que TAG_WAIT_ITEM_ID soit remis à None
+        while TAG_WAIT_ITEM_ID is not None:
+            time.sleep(0.5)
+        return {'message': 'Tag associé, attente terminée.'}, 200
 
 @api.route('/orders')
 class OrderList(Resource):
