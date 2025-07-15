@@ -7,7 +7,7 @@ import sqlite3
 import json
 import os
 
-from models import item_model_def, item_model_db_init, order_model_def, order_model_db_init
+from models import item_model_def, item_model_db_init, order_model_def, order_model_db_init, hanger_model_def, hanger_model_db_init
 
 # Dossier photos accessible en static
 PHOTOS_DIR = os.path.join(os.path.dirname(__file__), '..', 'photos')
@@ -24,6 +24,10 @@ def get_db():
 
 item_model = api.model('Item', item_model_def)
 order_model = api.model('Order', order_model_def)
+hanger_model = api.model('Hanger', hanger_model_def)
+tag_input_model = api.model('TagInput', {
+    'tag_id': fields.String(example="Identifiant NFC/RFID", description="Identifiant du tag lu")
+})
 
 @api.route('/items')
 class ItemList(Resource):
@@ -43,6 +47,8 @@ class ItemList(Resource):
         data = api.payload
         item_id = str(uuid.uuid4())
         photo_url = data.get('photo')
+        tag_id = data.get('tag_id')
+        hanger_id = data.get('hanger_id')
 
         # Si la photo est en base64, on la sauvegarde localement
         if photo_url and photo_url.startswith('data:image'):
@@ -59,8 +65,8 @@ class ItemList(Resource):
 
         conn = get_db()
         conn.execute(
-            'INSERT INTO items (id, name, category, color, size, photo) VALUES (?, ?, ?, ?, ?, ?)',
-            (item_id, data.get('name'), data.get('category'), data.get('color'), data.get('size'), photo_url)
+            'INSERT INTO items (id, name, category, color, size, photo, tag_id, hanger_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            (item_id, data.get('name'), data.get('category'), data.get('color'), data.get('size'), photo_url, tag_id, hanger_id)
         )
         conn.commit()
         item = {
@@ -69,7 +75,9 @@ class ItemList(Resource):
             'category': data.get('category'),
             'color': data.get('color'),
             'size': data.get('size'),
-            'photo': photo_url
+            'photo': photo_url,
+            'tag_id': tag_id,
+            'hanger_id': hanger_id
         }
         conn.close()
         return item, 201
@@ -87,8 +95,8 @@ class Item(Resource):
             conn.close()
             return {'error': 'Item not found'}, 404
         conn.execute(
-            'UPDATE items SET name = ?, category = ?, color = ?, size = ?, photo = ? WHERE id = ?',
-            (data.get('name'), data.get('category'), data.get('color'), data.get('size'), data.get('photo'), id)
+            'UPDATE items SET name = ?, category = ?, color = ?, size = ?, photo = ?, tag_id = ?, hanger_id = ? WHERE id = ?',
+            (data.get('name'), data.get('category'), data.get('color'), data.get('size'), data.get('photo'), data.get('tag_id'), data.get('hanger_id'), id)
         )
         conn.commit()
         conn.close()
@@ -102,6 +110,74 @@ class Item(Resource):
         conn.close()
         return {'message': 'Item deleted successfully'}, 200
 
+
+@api.route('/hangers')
+class HangerList(Resource):
+    @api.marshal_list_with(hanger_model)
+    def get(self):
+        """Récupère tous les cintres"""
+        conn = get_db()
+        cur = conn.execute('SELECT * FROM hangers')
+        hangers = [dict(row) for row in cur.fetchall()]
+        conn.close()
+        return hangers, 200
+
+    @api.expect(hanger_model)
+    @api.marshal_with(hanger_model, code=201)
+    def post(self):
+        """Crée un nouveau cintre"""
+        data = api.payload
+        hanger_id = str(uuid.uuid4())
+        conn = get_db()
+        conn.execute(
+            'INSERT INTO hangers (id, tag_id, mqtt_topic) VALUES (?, ?, ?)',
+            (hanger_id, data.get('tag_id'), data.get('mqtt_topic'))
+        )
+        conn.commit()
+        hanger = {
+            'id': hanger_id,
+            'tag_id': data.get('tag_id'),
+            'mqtt_topic': data.get('mqtt_topic')
+        }
+        conn.close()
+        return hanger, 201
+
+@api.route('/hangers/<string:id>')
+class Hanger(Resource):
+    @api.expect(hanger_model)
+    def put(self, id):
+        """Met à jour un cintre"""
+        data = api.payload
+        conn = get_db()
+        cur = conn.execute('SELECT * FROM hangers WHERE id = ?', (id,))
+        if cur.fetchone() is None:
+            conn.close()
+            return {'error': 'Hanger not found'}, 404
+        conn.execute(
+            'UPDATE hangers SET tag_id = ?, mqtt_topic = ? WHERE id = ?',
+            (data.get('tag_id'), data.get('mqtt_topic'), id)
+        )
+        conn.commit()
+        conn.close()
+        return {'message': 'Hanger updated successfully'}, 200
+
+    def delete(self, id):
+        """Supprime un cintre"""
+        conn = get_db()
+        conn.execute('DELETE FROM hangers WHERE id = ?', (id,))
+        conn.commit()
+        conn.close()
+        return {'message': 'Hanger deleted successfully'}, 200
+
+@api.route('/tag')
+class TagReader(Resource):
+    @api.expect(tag_input_model)
+    def post(self):
+        """Reçoit un tag lu par un lecteur externe et l'affiche (logique à venir)"""
+        data = api.payload
+        tag_id = data.get('tag_id')
+        app.logger.error(f"Tag reçu : {tag_id}")
+        return {'message': f'Tag reçu : {tag_id}'}, 200
 
 @api.route('/orders')
 class OrderList(Resource):
@@ -149,6 +225,7 @@ def init_db():
     conn = sqlite3.connect(DB_PATH)
     conn.execute(item_model_db_init)
     conn.execute(order_model_db_init)
+    conn.execute(hanger_model_db_init)
     conn.commit()
     conn.close()
 
