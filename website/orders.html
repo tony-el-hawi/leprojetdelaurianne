@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Historique des commandes - L'armoire de Laurianne</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app">
+        <header class="header">
+            <div class="header-content">
+                <button class="back-btn" onclick="window.close()">← Retour</button>
+                <h1 class="logo">Historique complet</h1>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <div id="orders-list" class="orders-list"></div>
+            <div id="loading" class="loading">
+                <div class="spinner"></div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const API_CONFIG = {
+            ordersUrl: 'https://gqn2um0k45.execute-api.eu-west-1.amazonaws.com/prod/orders'
+        };
+
+        async function loadOrders() {
+            try {
+                const response = await fetch(API_CONFIG.ordersUrl);
+                if (response.ok) {
+                    const orders = await response.json();
+                    displayOrders(orders);
+                } else {
+                    showError();
+                }
+            } catch (error) {
+                console.error('Error loading orders:', error);
+                showError();
+            }
+        }
+
+        function displayOrders(orders) {
+            const loading = document.getElementById('loading');
+            const ordersList = document.getElementById('orders-list');
+            
+            loading.style.display = 'none';
+            
+            if (orders.length === 0) {
+                ordersList.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">📋</div>
+                        <h3>Aucune commande</h3>
+                        <p>Vos commandes apparaîtront ici</p>
+                    </div>
+                `;
+                return;
+            }
+
+            orders.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            
+            ordersList.innerHTML = orders.map(order => {
+                const date = new Date(order.timestamp).toLocaleString('fr-FR', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    timeZone: 'Europe/Paris'
+                });
+                
+                const itemsHtml = order.items.map(item => {
+                    const imageContent = item.photo 
+                        ? `<img src="${item.photo}" alt="${item.name}">`
+                        : `<div class="item-placeholder">${item.category.charAt(0)}</div>`;
+                    
+                    return `
+                        <div class="order-item-card">
+                            <div class="order-item-image">${imageContent}</div>
+                            <div class="order-item-info">
+                                <div class="order-item-name">${item.name}</div>
+                                <div class="order-item-details">${item.category} • ${item.color} • ${item.size}</div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                
+                return `
+                    <div class="order-item">
+                        <div class="order-header">
+                            <span class="order-date">${date}</span>
+                            <span class="order-status">Livrée</span>
+                        </div>
+                        <div class="order-items">${itemsHtml}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function showError() {
+            const loading = document.getElementById('loading');
+            const ordersList = document.getElementById('orders-list');
+            
+            loading.style.display = 'none';
+            ordersList.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-icon">⚠️</div>
+                    <h3>Erreur de chargement</h3>
+                    <p>Impossible de charger l'historique</p>
+                    <button class="btn-primary" onclick="loadOrders()">Réessayer</button>
+                </div>
+            `;
+        }
+
+        document.addEventListener('DOMContentLoaded', loadOrders);
+    </script>
+</body>
+</html>

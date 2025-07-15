@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>L'armoire de Laurianne</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <h1 class="logo">LPDL</h1>
+                <div class="header-actions">
+                    <button class="menu-btn" onclick="toggleMenu()" id="menu-btn">
+                        <div class="menu-lines">
+                            <span></span>
+                            <span></span>
+                        </div>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Menu -->
+        <div id="main-menu" class="main-menu">
+            <div class="menu-header">
+                <div class="avatar-large">L</div>
+                <h3>Laurianne</h3>
+            </div>
+            <div class="menu-actions">
+                <button onclick="showOrderHistory()" class="menu-action">
+                    Historique
+                </button>
+                <button onclick="updateHomeAssistantToken()" class="menu-action">
+                    Home Assistant
+                </button>
+                <button onclick="showAddItemModal()" class="menu-action">
+                    Ajouter un article
+                </button>
+                <button onclick="setEditMode()" class="menu-action">
+                    Modifier le catalogue
+                </button>
+                <button onclick="setDeleteMode()" class="menu-action">
+                    Supprimer des articles
+                </button>
+            </div>
+        </div>
+
+        <!-- Bottom Navigation -->
+        <nav class="bottom-nav">
+            <button class="nav-btn active" onclick="showTab('catalogue')" data-tab="catalogue">
+                <span class="nav-label">Garde-robe</span>
+            </button>
+            <button class="nav-btn" onclick="showTab('panier')" data-tab="panier">
+                <span class="nav-label">Panier</span>
+                <span id="cart-badge" class="cart-badge"></span>
+            </button>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Catalogue Tab -->
+            <div id="catalogue" class="tab-content active">
+                <div class="search-bar">
+                    <div class="search-input-container">
+                        <span class="search-icon">🔎</span>
+                        <input type="text" placeholder="Rechercher" id="search-input" oninput="handleSearch()">
+                    </div>
+                    <button class="filter-btn" onclick="openFilters()">
+                        <span class="filter-icon">⚙</span>
+                        <span class="filter-text">Filtrer</span>
+                    </button>
+                </div>
+                
+                <div class="quick-filters">
+                    <button class="quick-filter active" onclick="filterByCategory('all')">Tout</button>
+                    <button class="quick-filter" onclick="filterByCategory('Jupes')">Jupes</button>
+                    <button class="quick-filter" onclick="filterByCategory('Jeans')">Jeans</button>
+                    <button class="quick-filter" onclick="filterByCategory('Blouses')">Blouses</button>
+                </div>
+
+                <div id="items-grid" class="items-grid"></div>
+            </div>
+
+            <!-- Cart Tab -->
+            <div id="panier" class="tab-content">
+                <div class="cart-header">
+                    <h2>Mon Panier</h2>
+                </div>
+                
+                <div id="cart-empty" class="empty-state">
+                    <div class="empty-icon">Panier vide</div>
+                    <h3>Votre panier est vide</h3>
+                    <p>Ajoutez des articles depuis votre garde-robe</p>
+                    <button class="btn-primary" onclick="showTab('catalogue')">Explorer</button>
+                </div>
+
+                <div id="cart-items" class="cart-items"></div>
+                
+                <div id="cart-actions" class="cart-actions">
+                    <button class="btn-primary btn-full" onclick="placeOrder()">
+                        Commander & Allumer
+                    </button>
+                </div>
+            </div>
+        </main>
+
+        <!-- Filter Modal -->
+        <div id="filter-modal" class="modal">
+            <div class="modal-content filter-modal-content">
+                <div class="modal-header">
+                    <h3>Filtres</h3>
+                    <button class="close-btn" onclick="closeFilters()">×</button>
+                </div>
+                <div class="filter-sections">
+                    <div class="filter-section">
+                        <h4>Catégories</h4>
+                        <div id="category-filters" class="filter-chips"></div>
+                    </div>
+                    <div class="filter-section">
+                        <h4>Couleurs</h4>
+                        <div id="color-filters" class="color-grid"></div>
+                    </div>
+                    <div class="filter-section">
+                        <h4>Tailles</h4>
+                        <div id="size-filters" class="filter-chips"></div>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button class="btn-secondary" onclick="resetFilters()">Réinitialiser</button>
+                    <button class="btn-primary" onclick="applyFilters()">Appliquer</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Item Modal -->
+        <div id="add-item-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Ajouter un article</h3>
+                    <button class="close-btn" onclick="closeAddItemModal()">×</button>
+                </div>
+                <form id="add-item-form" class="item-form">
+                    <div class="form-group">
+                        <input type="text" id="item-name" placeholder="Nom de l'article" required>
+                    </div>
+                    <div class="form-group">
+                        <select id="item-category" required>
+                            <option value="">Choisir une catégorie</option>
+                            <option value="Jupes">Jupes</option>
+                            <option value="Shorts">Shorts</option>
+                            <option value="Jeans">Jeans</option>
+                            <option value="Blouses">Blouses</option>
+                            <option value="Chemises">Chemises</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <input type="text" id="item-color" placeholder="Couleur" required>
+                    </div>
+                    <div class="form-group">
+                        <select id="item-size" required>
+                            <option value="">Choisir une taille</option>
+                            <option value="XS">XS</option>
+                            <option value="S">S</option>
+                            <option value="M">M</option>
+                            <option value="L">L</option>
+                            <option value="XL">XL</option>
+                        </select>
+                    </div>
+                    <div class="form-group photo-group">
+                        <label class="photo-label">Photo (optionnel)</label>
+                        <input type="file" id="item-photo" accept="image/*" capture="environment">
+                        <div id="photo-preview" class="photo-preview"></div>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn-secondary" onclick="closeAddItemModal()">Annuler</button>
+                        <button type="submit" class="btn-primary">Ajouter</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Edit Item Modal -->
+        <div id="edit-item-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Modifier l'article</h3>
+                    <button class="close-btn" onclick="closeEditItemModal()">×</button>
+                </div>
+                <form id="edit-item-form" class="item-form">
+                    <div class="form-group">
+                        <input type="text" id="edit-item-name" placeholder="Nom de l'article" required>
+                    </div>
+                    <div class="form-group">
+                        <select id="edit-item-category" required>
+                            <option value="">Choisir une catégorie</option>
+                            <option value="Jupes">Jupes</option>
+                            <option value="Shorts">Shorts</option>
+                            <option value="Jeans">Jeans</option>
+                            <option value="Blouses">Blouses</option>
+                            <option value="Chemises">Chemises</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <input type="text" id="edit-item-color" placeholder="Couleur" required>
+                    </div>
+                    <div class="form-group">
+                        <select id="edit-item-size" required>
+                            <option value="">Choisir une taille</option>
+                            <option value="XS">XS</option>
+                            <option value="S">S</option>
+                            <option value="M">M</option>
+                            <option value="L">L</option>
+                            <option value="XL">XL</option>
+                        </select>
+                    </div>
+                    <div class="form-group photo-group">
+                        <label class="photo-label">Photo (optionnel)</label>
+                        <input type="file" id="edit-item-photo" accept="image/*" capture="environment">
+                        <div id="edit-photo-preview" class="photo-preview"></div>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn-secondary" onclick="closeEditItemModal()">Annuler</button>
+                        <button type="submit" class="btn-primary">Modifier</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Success Modal -->
+        <div id="success-modal" class="modal">
+            <div class="modal-content success-content">
+                <div class="success-icon">✓</div>
+                <h3>Commande envoyée!</h3>
+                <p>Votre cintre connecté va s'allumer</p>
+                <button class="btn-primary" onclick="closeSuccessModal()">Parfait!</button>
+            </div>
+        </div>
+
+        <!-- Order History Modal -->
+        <div id="order-history-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Historique des commandes</h3>
+                    <button class="close-btn" onclick="closeOrderHistory()">×</button>
+                </div>
+                <div id="order-history-list" class="order-history"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
