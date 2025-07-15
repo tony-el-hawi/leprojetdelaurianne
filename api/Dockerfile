@@ -9,7 +9,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copie le code
 COPY app /app/app
-COPY database.sqlite3 /app/database.sqlite3
 
 # Crée le dossier pour les photos
 RUN mkdir -p photos

@@ -1,0 +1,19 @@
+services:
+  api:
+    build: ./api
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./api/photos:/app/photos
+      - ./api/database.sqlite3:/app/database.sqlite3
+    environment:
+      - FLASK_ENV=development
+    restart: unless-stopped
+
+  website:
+    build: ./website
+    ports:
+      - "8080:80"
+    volumes:
+      - ./website:/usr/share/nginx/html
+    restart: unless-stopped
