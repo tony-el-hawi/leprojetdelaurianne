@@ -5,17 +5,19 @@ const API_CONFIG = {
     entityId: 'light.headlight'
 };
 
-API_CONFIG.baseUrl = `http://localhost:5080/items`;
-API_CONFIG.ordersUrl = `http://localhost:5080/orders`;
-API_CONFIG.photoUrl = `http://localhost:5080/`;
+// API_CONFIG.baseUrl = `http://localhost:5080/items`;
+// API_CONFIG.ordersUrl = `http://localhost:5080/orders`;
+// API_CONFIG.photoUrl = `http://localhost:5080/`;
 
+API_CONFIG.baseUrl = `https://${API_CONFIG.apiId}.execute-api.eu-west-1.amazonaws.com/prod/items`;
+API_CONFIG.ordersUrl = `https://${API_CONFIG.apiId}.execute-api.eu-west-1.amazonaws.com/prod/orders`;
+API_CONFIG.photoUrl = '';  
 // State Management
 let clothingItems = [];
 let cart = [];
 let activeFilters = {
     categories: [],
     colors: [],
-    sizes: [],
     search: ''
 };
 let editMode = false;
@@ -155,12 +157,10 @@ function closeFilters() {
 function buildFilterOptions() {
     const categories = {};
     const colors = {};
-    const sizes = {};
     
     clothingItems.forEach(item => {
         categories[item.category] = (categories[item.category] || 0) + 1;
         colors[item.color] = (colors[item.color] || 0) + 1;
-        sizes[item.size] = (sizes[item.size] || 0) + 1;
     });
     
     // Build category filters
@@ -182,16 +182,6 @@ function buildFilterOptions() {
                  onclick="toggleFilter('colors', '${color}')">
             </div>
         `).join('');
-    
-    // Build size filters
-    const sizeFilters = document.getElementById('size-filters');
-    sizeFilters.innerHTML = Object.keys(sizes)
-        .map(size => `
-            <div class="filter-chip ${activeFilters.sizes.includes(size) ? 'active' : ''}" 
-                 onclick="toggleFilter('sizes', '${size}')">
-                ${size}
-            </div>
-        `).join('');
 }
 
 function toggleFilter(filterType, value) {
@@ -211,7 +201,7 @@ function applyFilters() {
 }
 
 function resetFilters() {
-    activeFilters = { categories: [], colors: [], sizes: [], search: '' };
+    activeFilters = { categories: [], colors: [], search: '' };
     document.getElementById('search-input').value = '';
     buildFilterOptions();
     displayItems();
@@ -276,13 +266,6 @@ function displayItems() {
         );
     }
     
-    // Apply size filter
-    if (activeFilters.sizes.length > 0) {
-        filteredItems = filteredItems.filter(item => 
-            activeFilters.sizes.includes(item.size)
-        );
-    }
-    
     if (filteredItems.length === 0) {
         grid.innerHTML = `
             <div class="empty-state" style="grid-column: 1 / -1;">
@@ -310,7 +293,7 @@ function displayItems() {
                 <div class="item-image">${imageContent}</div>
                 <div class="item-info">
                     <div class="item-name">${item.name}</div>
-                    <div class="item-details">${item.category} • ${item.color} • ${item.size}</div>
+                    <div class="item-details">${item.category} • ${item.color}</div>
                     <button class="add-btn" ${inCart ? 'disabled' : ''} onclick="addToCart('${item.id}'); event.stopPropagation();">
                         ${inCart ? 'Ajouté' : 'Ajouter'}
                     </button>
@@ -389,7 +372,7 @@ function updateCartDisplay() {
                     <div class="cart-item-image">${imageContent}</div>
                     <div class="cart-item-info">
                         <div class="cart-item-name">${item.name}</div>
-                        <div class="cart-item-details">${item.category} • ${item.color} • ${item.size}</div>
+                        <div class="cart-item-details">${item.category} • ${item.color}</div>
                     </div>
                     <button class="remove-btn" onclick="removeFromCart('${item.id}')">×</button>
                 </div>
@@ -499,7 +482,6 @@ function editItem(itemId) {
         document.getElementById('edit-item-name').value = item.name;
         document.getElementById('edit-item-category').value = item.category;
         document.getElementById('edit-item-color').value = item.color;
-        document.getElementById('edit-item-size').value = item.size;
         
         const preview = document.getElementById('edit-photo-preview');
         if (item.photo) {
@@ -560,7 +542,6 @@ async function addNewItem(event) {
     const name = document.getElementById('item-name').value;
     const category = document.getElementById('item-category').value;
     const color = document.getElementById('item-color').value;
-    const size = document.getElementById('item-size').value;
     const photoFile = document.getElementById('item-photo').files[0];
     
     const newItem = {
@@ -568,7 +549,6 @@ async function addNewItem(event) {
         category: category,
         emoji: getEmojiForCategory(category),
         color: color,
-        size: size,
         photo: photoFile ? await fileToBase64(photoFile) : null
     };
     
@@ -601,7 +581,6 @@ async function updateItem(event) {
     const name = document.getElementById('edit-item-name').value;
     const category = document.getElementById('edit-item-category').value;
     const color = document.getElementById('edit-item-color').value;
-    const size = document.getElementById('edit-item-size').value;
     const photoFile = document.getElementById('edit-item-photo').files[0];
     
     const updatedItem = {
@@ -609,7 +588,6 @@ async function updateItem(event) {
         category: category,
         emoji: getEmojiForCategory(category),
         color: color,
-        size: size,
         photo: photoFile ? await fileToBase64(photoFile) : null
     };
     
@@ -960,7 +938,7 @@ function renderPlanifier() {
                 <span class="planifier-icon">🖊️</span>
                 <div>
                     <div class="planifier-nom" style="font-weight:600;">${tenue.nom}</div>
-                    ${tenue.desc ? `<div class="planifier-desc">${tenue.desc}</div>` : ''}
+                    ${tenue.desc ? `<div class="planifier-desc">${tenue.desc}</div> <div class="planifier-desc">${tenue.date}</div>` : ''}
                 </div>
             </div>
             <div class="planifier-card-actions">
@@ -1044,10 +1022,10 @@ function closePlanifierForm(){
 }
 
 function submitPlanifierForm(e){
-
     e.preventDefault();
     const nom = document.getElementById('planifier-nom').value.trim();
     const desc = document.getElementById('planifier-desc').value;
+    const date = document.getElementById('planifier-date').value; // <-- AJOUT
     const checked = Array.from(document.querySelectorAll("#planifier-items-select input[name='planifier-items']:checked")).map(cb=>cb.value);
     // Vérifier unicité du nom
     let isDuplicate = false;
@@ -1066,11 +1044,12 @@ function submitPlanifierForm(e){
         if(tenue){
             tenue.nom = nom;
             tenue.desc = desc;
+            tenue.date = date; // <-- AJOUT
             tenue.items = checked;
         }
     }else{
         const newId = planifierEvents.length ? Math.max(...planifierEvents.map(e => e.id)) + 1 : 1;
-        planifierEvents.push({ id: newId, nom, desc, items: checked });
+        planifierEvents.push({ id: newId, nom, desc, date, items: checked }); // <-- AJOUT
     }
     closePlanifierForm();
     renderPlanifier();

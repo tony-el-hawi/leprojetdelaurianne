@@ -298,6 +298,17 @@ body {
     height: calc(100vh - 140px); /* Hauteur totale moins header et navigation */
 }
 
+#planifier-items-select input[type="checkbox"] {
+    accent-color: #2563eb; /* Bleu */
+}
+
+.planifier-date {
+    color: #2563eb;
+    font-size: 0.95em;
+    margin-left: 8px;
+    font-weight: 500;
+}
+
 #organiser {
     flex-direction: column;
     height: calc(100vh - 140px); /* Hauteur totale moins header et navigation */
