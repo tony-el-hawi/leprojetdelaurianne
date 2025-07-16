@@ -290,6 +290,7 @@ body {
 .innerPage-body {
     flex: 1;
     min-height: 0;
+    padding-bottom: 250px;;
 }
 
 #planifier {
@@ -300,6 +301,18 @@ body {
 #organiser {
     flex-direction: column;
     height: calc(100vh - 140px); /* Hauteur totale moins header et navigation */
+}
+
+#organiser .items-grid {
+    display: none;
+}
+
+#organiser.delete-mode .items-grid {
+    display: grid;
+}
+
+#organiser.delete-mode .add-btn{
+    display: none;
 }
 
 #liste {
@@ -315,6 +328,7 @@ body {
     width: 100%;
     max-width: 428px;
     padding-bottom: 50px;
+    padding-top: 10px;
     background: white;
     display: flex;
     flex-direction: column;
