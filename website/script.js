@@ -9,6 +9,7 @@ const host = window.location.hostname;
 API_CONFIG.baseUrl = `http://${host}:5080/items`;
 API_CONFIG.ordersUrl = `http://${host}:5080/orders`;
 API_CONFIG.planifierUrl = `http://${host}:5080/outfits`;
+API_CONFIG.tagUrl = `http://${host}:5080/tag`;
 API_CONFIG.photoUrl = `http://${host}:5080/`;
 
 // State Management
@@ -503,6 +504,7 @@ function editItem(itemId) {
     const item = clothingItems.find(i => i.id === itemId);
     if (item) {
         editingItemId = itemId;
+        document.getElementById('edit-item-id').value = item.id;
         document.getElementById('edit-item-name').value = item.name;
         document.getElementById('edit-item-category').value = item.category;
         document.getElementById('edit-item-color').value = item.color;
@@ -523,6 +525,25 @@ function closeEditItemModal() {
     document.getElementById('edit-item-form').reset();
     document.getElementById('edit-photo-preview').innerHTML = '';
     editingItemId = null;
+}
+
+async function tagMode() {
+    const id = document.getElementById('edit-item-id').value;
+    try {
+        const response = await fetch(`${API_CONFIG.tagUrl}/${id}`, {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+        });
+        
+        if (response.ok) {
+            closeEditItemModal();
+        } else {
+            showToast('Erreur lors du tagging');
+        }
+    } catch (error) {
+        console.error('Error updating item:', error);
+        showToast('Erreur de connexion');
+    }
 }
 
 async function deleteItem(itemId) {
