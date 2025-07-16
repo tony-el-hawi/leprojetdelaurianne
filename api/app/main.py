@@ -388,6 +388,7 @@ def init_db():
     conn.execute(item_model_db_init)
     conn.execute(order_model_db_init)
     conn.execute(hanger_model_db_init)
+    conn.execute(outfit_model_db_init)
     conn.commit()
     conn.close()
 
