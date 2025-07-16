@@ -315,6 +315,10 @@ body {
     display: none;
 }
 
+#liste .edit-btn {
+    display: none;
+}
+
 #liste {
     flex-direction: column;
     height: calc(100vh - 140px); /* Hauteur totale moins header et navigation */
@@ -562,9 +566,15 @@ body {
     line-height: 1.4;
 }
 
-.add-btn {
+.item-buttons {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.edit-btn {
     width: 100%;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: #007FFF;
     color: white;
     border: none;
     padding: 14px;
@@ -576,12 +586,22 @@ body {
     box-shadow: 0 2px 10px rgba(102, 126, 234, 0.3);
 }
 
-.add-btn:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+
+.add-btn, .del-btn {
+    flex: 1;
+    background: #007FFF;
+    color: white;
+    border: none;
+    padding: 14px;
+    border-radius: 12px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 10px rgba(102, 126, 234, 0.3);
 }
 
-.add-btn:disabled {
+.add-btn:disabled, .del-btn:disabled {
     background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
     color: #6c757d;
     cursor: not-allowed;
@@ -1419,4 +1439,96 @@ body {
     z-index: 10000;
     backdrop-filter: blur(10px);
     box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+}
+
+/* Cart Footer Styles */
+.cart-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+.cart-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: #666;
+    font-weight: 600;
+}
+
+.cart-badge {
+    background: #ff4757;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 700;
+    min-width: 32px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(255, 71, 87, 0.3);
+}
+
+.cart-footer .btn-primary {
+    background: #007FFF;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 25px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 16px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0, 127, 255, 0.3);
+    min-width: 120px;
+}
+
+.cart-footer .btn-primary:hover {
+    background: #0066CC;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 127, 255, 0.4);
+}
+
+/* Cart Badge Footer Styles */
+.cart-counter {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.cart-text {
+    color: #666;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.cart-badge-footer {
+    background: #ff4757;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 50%;
+    font-size: 14px;
+    font-weight: 700;
+    min-width: 32px;
+    min-height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(255, 71, 87, 0.3);
+    transition: all 0.3s ease;
+}
+
+/* Footer spécifique pour l'onglet liste */
+#liste .innerPage-footer {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px 50px;
+    gap: 20px;
+}
+
+#liste .innerPage-footer .btn-primary {
+    width: auto;
+    min-width: 120px;
 }

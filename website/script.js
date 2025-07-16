@@ -1,7 +1,7 @@
 // API Configuration
 const API_CONFIG = {
     apiId: 'c3hdm1rt47',
-    homeAssistantUrl: 'http://192.168.0.61:8123/api/services/light/toggle',
+    homeAssistantUrl: '',
     entityId: 'light.headlight'
 };
 
@@ -103,6 +103,11 @@ function showTab(tabName) {
     
     if (tabName === 'panier') {
         updateCartDisplay();
+    }
+    
+    if (tabName === 'liste') {
+        // Forcer l'affichage de la grille d'items à chaque ouverture de l'onglet Liste
+        displayItems();
     }
 
 }
@@ -250,74 +255,83 @@ function getEmojiForCategory(category) {
 
 // Item Display
 function displayItems() {
-    const grid = document.getElementById('items-grid');
-    let filteredItems = clothingItems;
-    
-    // Apply search filter
-    if (activeFilters.search) {
-        filteredItems = filteredItems.filter(item => 
-            item.name.toLowerCase().includes(activeFilters.search) ||
-            item.category.toLowerCase().includes(activeFilters.search) ||
-            item.color.toLowerCase().includes(activeFilters.search)
-        );
-    }
-    
-    // Apply category filter
-    if (activeFilters.categories.length > 0) {
-        filteredItems = filteredItems.filter(item => 
-            activeFilters.categories.includes(item.category)
-        );
-    }
-    
-    // Apply color filter
-    if (activeFilters.colors.length > 0) {
-        filteredItems = filteredItems.filter(item => 
-            activeFilters.colors.includes(item.color)
-        );
-    }
-    
-    // Apply size filter
-    if (activeFilters.sizes.length > 0) {
-        filteredItems = filteredItems.filter(item => 
-            activeFilters.sizes.includes(item.size)
-        );
-    }
-    
-    if (filteredItems.length === 0) {
-        grid.innerHTML = `
-            <div class="empty-state" style="grid-column: 1 / -1;">
-                <div class="empty-icon">Aucun résultat</div>
-                <h3>Aucun article trouvé</h3>
-                <p>Essayez de modifier vos filtres</p>
-            </div>
-        `;
-        return;
-    }
-    
-    grid.innerHTML = filteredItems.map(item => {
-        const inCart = isInCart(item.id);
-        const imageContent = item.photo 
-            ? `<img src="${API_CONFIG.photoUrl}${item.photo}" alt="${item.name}">`
-            : `<div class="item-placeholder">${item.category.charAt(0)}</div>`;
+    const gridNames = ['items-grid', 'items-grid-2' ];
+    gridNames.forEach(gridName => {
+        let grid = document.getElementById(gridName);
+        let filteredItems = clothingItems;
         
-        const cardClass = editMode ? 'item-card edit-mode' : deleteMode ? 'item-card delete-mode' : 'item-card';
-        const cardClick = editMode ? `editItem('${item.id}')` : deleteMode ? '' : '';
+        // Apply search filter
+        if (activeFilters.search) {
+            filteredItems = filteredItems.filter(item => 
+                item.name.toLowerCase().includes(activeFilters.search) ||
+                item.category.toLowerCase().includes(activeFilters.search) ||
+                item.color.toLowerCase().includes(activeFilters.search)
+            );
+        }
         
-        return `
-            <div class="${cardClass}" onclick="${cardClick}">
-                <button class="delete-btn ${deleteMode ? 'show' : ''}" onclick="deleteItem('${item.id}'); event.stopPropagation();">×</button>
-                <button class="edit-btn-item ${editMode ? 'show' : ''}" onclick="editItem('${item.id}'); event.stopPropagation();">-</button>
-                <div class="item-image">${imageContent}</div>
-                <div class="item-info">
-                    <div class="item-name">${item.name}</div>
-                    <div class="item-details">${item.category} • ${item.color} • ${item.size}</div>
-                    <button class="add-btn" ${inCart ? 'disabled' : ''} onclick="addToCart('${item.id}'); event.stopPropagation();">
-                        ${inCart ? 'Ajouté' : 'Ajouter'}
-                    </button>
+        // Apply category filter
+        if (activeFilters.categories.length > 0) {
+            filteredItems = filteredItems.filter(item => 
+                activeFilters.categories.includes(item.category)
+            );
+        }
+        
+        // Apply color filter
+        if (activeFilters.colors.length > 0) {
+            filteredItems = filteredItems.filter(item => 
+                activeFilters.colors.includes(item.color)
+            );
+        }
+        
+        // Apply size filter
+        if (activeFilters.sizes.length > 0) {
+            filteredItems = filteredItems.filter(item => 
+                activeFilters.sizes.includes(item.size)
+            );
+        }
+        
+        if (filteredItems.length === 0) {
+            grid.innerHTML = `
+                <div class="empty-state" style="grid-column: 1 / -1;">
+                    <div class="empty-icon">Aucun résultat</div>
+                    <h3>Aucun article trouvé</h3>
+                    <p>Essayez de modifier vos filtres</p>
                 </div>
-            </div>
-        `;
-    }).join('');
+            `;
+            return;
+        }
+        
+        grid.innerHTML = filteredItems.map(item => {
+            const inCart = isInCart(item.id);
+            const imageContent = item.photo 
+                ? `<img src="${API_CONFIG.photoUrl}${item.photo}" alt="${item.name}">`
+                : `<div class="item-placeholder">${item.category.charAt(0)}</div>`;
+            
+            const cardClass = editMode ? 'item-card edit-mode' : deleteMode ? 'item-card delete-mode' : 'item-card';
+            const cardClick = editMode ? `editItem('${item.id}')` : deleteMode ? '' : '';
+            
+            return `
+                <div class="${cardClass}" onclick="${cardClick}">
+                    <button class="delete-btn ${deleteMode ? 'show' : ''}" onclick="deleteItem('${item.id}'); event.stopPropagation();">×</button>
+                    <div class="item-image">${imageContent}</div>
+                    <div class="item-info">
+                        <div class="item-name">${item.name}</div>
+                        <div class="item-details">${item.category} • ${item.color} • ${item.size}</div>
+                        <div class="item-buttons">
+                            <button class="add-btn" ${inCart ? 'disabled' : ''} onclick="addToCart('${item.id}'); event.stopPropagation();">
+                                ${inCart ? 'Ajouté' : 'Ajouter'}
+                            </button>
+                            <button class="del-btn" ${!inCart ? 'disabled' : ''} onclick="removeFromCart('${item.id}'); event.stopPropagation();">
+                                ${inCart ? 'Elever' : 'Enlever'}
+                            </button>
+                        </div>
+                        <button class="edit-btn ${editMode ? 'show' : ''}" onclick="editItem('${item.id}'); event.stopPropagation();">Edit</button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    });
+
 }
 
 // Cart Management
@@ -333,7 +347,7 @@ function addToCart(itemId) {
         cart.push(item);
         updateCartBadge();
         displayItems();
-        showToast(`${item.name} ajouté au panier`);
+        //showToast(`${item.name} ajouté au panier`);
         
         // Haptic feedback on mobile
         if (navigator.vibrate) {
@@ -350,18 +364,27 @@ function removeFromCart(itemId) {
         updateCartDisplay();
         updateCartBadge();
         displayItems();
-        showToast(`${item.name} retiré du panier`);
+        //showToast(`${item.name} retiré du panier`);
     }
 }
 
 function updateCartBadge() {
+    console.log('Updating cart badge');
     const badge = document.getElementById('cart-badge');
-    if ( badge === null ) return;
-    if (cart.length > 0) {
-        badge.textContent = cart.length;
-        badge.classList.add('show');
-    } else {
-        badge.classList.remove('show');
+    const footerBadge = document.getElementById('cart-badge-footer');
+    
+    if ( badge !== null ) {        
+        if (cart.length > 0) {
+            badge.textContent = cart.length;
+            badge.classList.add('show');
+        } else {
+            badge.classList.remove('show');
+        }
+    }
+    
+    // Mettre à jour le badge du footer
+    if (footerBadge) {
+        footerBadge.textContent = cart.length;
     }
 }
 
@@ -436,12 +459,14 @@ function setEditMode() {
     displayItems();
 }
 
+// On va passer dans un mode edit / delete 2 en 1
 function setDeleteMode() {
     editMode = false;
     
     if (deleteMode) {
         // Si déjà en mode suppression, on désactive
         deleteMode = false;
+        editMode = false;
         
         // Retirer la classe delete-mode de l'onglet organiser pour cacher la grille
         const organiserTab = document.getElementById('organiser');
@@ -459,6 +484,7 @@ function setDeleteMode() {
     } else {
         // Activer le mode suppression
         deleteMode = true;
+        editMode = true;
         
         // Ajouter la classe delete-mode à l'onglet organiser pour afficher la grille
         const organiserTab = document.getElementById('organiser');
@@ -469,7 +495,7 @@ function setDeleteMode() {
         // Changer le texte du bouton
         const deleteBtn = document.querySelector('#organiser .btn-secondary-blue');
         if (deleteBtn) {
-            deleteBtn.textContent = 'Fin de la suppression';
+            deleteBtn.textContent = 'Fin de la suppression / modification';
         }
         
         //showToast('Mode suppression activé');
