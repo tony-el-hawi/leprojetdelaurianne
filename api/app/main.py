@@ -8,7 +8,7 @@ import json
 import os
 import time
 
-from models import item_model_def, item_model_db_init, order_model_def, order_model_db_init, hanger_model_def, hanger_model_db_init
+from models import item_model_def, item_model_db_init, order_model_def, order_model_db_init, hanger_model_def, hanger_model_db_init, outfit_model_def, outfit_model_db_init
 
 # Dossier photos accessible en static
 PHOTOS_DIR = os.path.join(os.path.dirname(__file__), '..', 'photos')
@@ -26,6 +26,7 @@ def get_db():
 item_model = api.model('Item', item_model_def)
 order_model = api.model('Order', order_model_def)
 hanger_model = api.model('Hanger', hanger_model_def)
+outfit_model = api.model('Outfit', outfit_model_def)
 
 tag_input_model = api.model('TagInput', {
     'tag_id': fields.String(example="Identifiant NFC/RFID", description="Identifiant du tag lu")
@@ -322,6 +323,43 @@ class OrderList(Resource):
         }
         conn.close()
         return order, 201
+
+@api.route('/outfits')
+class OutfitList(Resource):
+    @api.marshal_list_with(outfit_model)
+    def get(self):
+        """Récupère toutes les tenues"""
+        conn = get_db()
+        cur = conn.execute('SELECT * FROM outfits')
+        outfits = []
+        for row in cur.fetchall():
+            outfit = dict(row)
+            outfit['items'] = json.loads(outfit['items']) if outfit['items'] else []
+            outfits.append(outfit)
+        conn.close()
+        return outfits, 200
+
+    @api.expect(outfit_model)
+    @api.marshal_with(outfit_model, code=201)
+    def post(self):
+        """Crée une nouvelle tenue"""
+        data = api.payload
+        outfit_id = "outfit_" + str(uuid.uuid4())
+        items_list = data.get('items', [])
+        conn = get_db()
+        conn.execute(
+            'INSERT INTO outfits (id, name, description, items) VALUES (?, ?, ?, ?)',
+            (outfit_id, data.get('name'), data.get('description'), json.dumps(items_list))
+        )
+        conn.commit()
+        outfit = {
+            'id': outfit_id,
+            'name': data.get('name'),
+            'description': data.get('description'),
+            'items': items_list
+        }
+        conn.close()
+        return outfit, 201
 
 def init_db():
     if not os.path.exists(DB_PATH):
