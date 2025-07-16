@@ -229,6 +229,7 @@
                 <form id="edit-item-form" class="item-form">
                     <div class="form-group">
                         <input type="text" id="edit-item-name" placeholder="Nom du vêtement" required>
+                        <input type="hidden" id="edit-item-id" placeholder="id">
                     </div>
                     <div class="form-group">
                         <select id="edit-item-category" required>
@@ -261,6 +262,9 @@
                     <div class="modal-actions">
                         <button type="button" class="btn-secondary" onclick="closeEditItemModal()">Annuler</button>
                         <button type="submit" class="btn-primary">Modifier</button>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn-secondary" onclick="tagMode()">Associer</button>
                     </div>
                 </form>
             </div>
