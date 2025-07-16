@@ -54,3 +54,17 @@ hanger_model_db_init = '''CREATE TABLE IF NOT EXISTS hangers (
     tag_id TEXT NOT NULL,
     mqtt_topic TEXT NOT NULL
 )'''
+
+outfit_model_def = {
+    'id': fields.String(description="Identifiant unique de la tenue"),
+    'name': fields.String(example="Tenue décontractée", description="Nom de la tenue"),
+    'description': fields.String(example="Pour le weekend", description="Description de la tenue"),
+    'items': fields.List(fields.Raw, description="Liste des articles de la tenue")
+}
+
+outfit_model_db_init = '''CREATE TABLE IF NOT EXISTS outfits (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    description TEXT,
+    items TEXT
+)'''

@@ -14,7 +14,13 @@
     <div class="app">
         <!-- Header -->
         <header class="header">
-            <div class="header-content"></div>
+            <div class="header-content">
+                <div id="weather-widget" class="weather-widget">
+                    <span id="weather-icon">☀️</span>
+                    <span id="rain-chance">15%</span>
+                    <button id="weather-close" class="weather-close">×</button>
+                </div>
+            </div>
         </header>
 
         <!-- Bottom Navigation -->
@@ -81,6 +87,7 @@
                 </div>
                 <div class="innerPage-footer">
                     <button class="btn-secondary-blue" onclick="setDeleteMode()">- Supprimer un habits</button>
+                    <button class="btn-primary" onclick="showRfidModal()">+ Scanner RFID</button>
                     <button class="btn-primary" onclick="showAddItemModal()">+ Ajouter un habits</button>
                 </div>
             </div>
@@ -280,8 +287,280 @@
                 <div id="order-history-list" class="order-history"></div>
             </div>
         </div>
+
+        <!-- RFID Scanner Modal -->
+        <div id="rfid-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Scanner RFID</h3>
+                    <button class="close-btn" onclick="closeRfidModal()">×</button>
+                </div>
+                <div class="rfid-content">
+                    <div class="form-group">
+                        <label>Sélectionner un article :</label>
+                        <select id="rfid-item-select" required>
+                            <option value="">Choisir un article</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <input type="text" id="rfid-tag-input" placeholder="Approchez le tag RFID ou saisissez l'ID" required>
+                    </div>
+                    <div id="rfid-status" class="rfid-status"></div>
+                </div>
+                <div class="modal-actions">
+                    <button class="btn-secondary" onclick="closeRfidModal()">Annuler</button>
+                    <button class="btn-primary" onclick="assignRfidTag()">Associer le tag</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script src="script.js"></script>
+    <style>
+        .weather-widget {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: white;
+            padding: 6px 12px;
+            background: rgba(255,255,255,0.15);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        #weather-icon { font-size: 16px; }
+        #rain-chance { font-weight: 500; }
+        .weather-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            padding: 0;
+            margin-left: 4px;
+            opacity: 0.7;
+        }
+        .weather-close:hover { opacity: 1; }
+        .weather-widget.hidden { display: none; }
+        .items-grid { padding-bottom: 120px !important; }
+    </style>
+    <script>
+        // Weather functionality
+        async function updateWeather() {
+            try {
+                const response = await fetch('https://api.open-meteo.com/v1/forecast?latitude=48.8566&longitude=2.3522&current_weather=true&hourly=precipitation_probability&timezone=Europe/Paris');
+                const data = await response.json();
+                const weatherCode = data.current_weather.weathercode;
+                const rainChance = data.hourly.precipitation_probability[0] || 0;
+                
+                const iconElement = document.getElementById('weather-icon');
+                const rainElement = document.getElementById('rain-chance');
+                
+                if (weatherCode >= 61 && weatherCode <= 67) {
+                    iconElement.textContent = '🌧️';
+                } else if (weatherCode >= 2 && weatherCode <= 3) {
+                    iconElement.textContent = '☁️';
+                } else if (weatherCode === 0) {
+                    iconElement.textContent = '☀️';
+                } else {
+                    iconElement.textContent = '🌤️';
+                }
+                
+                rainElement.textContent = `${rainChance}%`;
+            } catch (error) {
+                document.getElementById('weather-icon').textContent = '🌤️';
+                document.getElementById('rain-chance').textContent = '15%';
+            }
+        }
+        
+        document.getElementById('weather-close').onclick = function() {
+            document.getElementById('weather-widget').classList.add('hidden');
+        };
+        
+        // RFID functionality
+        function showRfidModal() {
+            loadItemsForRfid();
+            document.getElementById('rfid-modal').style.display = 'flex';
+        }
+        
+        function closeRfidModal() {
+            document.getElementById('rfid-modal').style.display = 'none';
+            document.getElementById('rfid-tag-input').value = '';
+            document.getElementById('rfid-item-select').value = '';
+            document.getElementById('rfid-status').innerHTML = '';
+        }
+        
+        async function loadItemsForRfid() {
+            const select = document.getElementById('rfid-item-select');
+            select.innerHTML = '<option value="">Chargement...</option>';
+            
+            try {
+                const response = await fetch('http://localhost:5080/items');
+                const items = await response.json();
+                
+                select.innerHTML = '<option value="">Choisir un article</option>';
+                
+                if (items && Array.isArray(items) && items.length > 0) {
+                    items.forEach(item => {
+                        if (item && item.id && item.name) {
+                            const option = document.createElement('option');
+                            option.value = item.id;
+                            option.textContent = `${item.name} ${item.category ? '(' + item.category + ')' : ''}`;
+                            select.appendChild(option);
+                        }
+                    });
+                } else {
+                    select.innerHTML = '<option value="">Aucun article disponible</option>';
+                }
+            } catch (error) {
+                console.error('Erreur RFID:', error);
+                select.innerHTML = '<option value="">Erreur: Vérifiez que l\'API est démarrée</option>';
+            }
+        }
+        
+        async function assignRfidTag() {
+            const itemId = document.getElementById('rfid-item-select').value;
+            const tagId = document.getElementById('rfid-tag-input').value.trim();
+            const statusDiv = document.getElementById('rfid-status');
+            
+            if (!itemId || !tagId) {
+                statusDiv.innerHTML = '<div style="color: red;">Veuillez sélectionner un article et saisir un ID de tag</div>';
+                return;
+            }
+            
+            try {
+                statusDiv.innerHTML = '<div style="color: blue;">Association en cours...</div>';
+                
+                const itemResponse = await fetch('http://localhost:5080/items');
+                const items = await itemResponse.json();
+                const item = items.find(i => i.id === itemId);
+                
+                if (!item) throw new Error('Article non trouvé');
+                
+                const updateResponse = await fetch(`http://localhost:5080/items/${itemId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ...item, tag_id: tagId })
+                });
+                
+                if (updateResponse.ok) {
+                    statusDiv.innerHTML = '<div style="color: green;">✓ Tag RFID associé avec succès!</div>';
+                    setTimeout(() => closeRfidModal(), 2000);
+                } else {
+                    throw new Error('Erreur lors de la mise à jour');
+                }
+            } catch (error) {
+                statusDiv.innerHTML = '<div style="color: red;">Erreur lors de l\'association du tag</div>';
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            updateWeather();
+            loadOutfits();
+        });
+        
+        // Outfit functionality
+        async function loadOutfits() {
+            try {
+                const response = await fetch('http://localhost:5080/outfits');
+                const outfits = await response.json();
+                displayOutfits(outfits);
+            } catch (error) {
+                console.error('Erreur chargement tenues:', error);
+            }
+        }
+        
+        function displayOutfits(outfits) {
+            const container = document.getElementById('planifier-events-list');
+            container.innerHTML = '';
+            
+            outfits.forEach(outfit => {
+                const outfitCard = document.createElement('div');
+                outfitCard.className = 'planifier-card';
+                outfitCard.innerHTML = `
+                    <div class="planifier-card-content">
+                        <div class="planifier-icon">👕</div>
+                        <div>
+                            <div class="planifier-date">${outfit.name}</div>
+                            <div class="planifier-desc">${outfit.description || ''}</div>
+                            <div class="planifier-desc">${outfit.items.length} articles</div>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(outfitCard);
+            });
+        }
+        
+        function openPlanifierForm() {
+            loadItemsForOutfit();
+            document.getElementById('planifier-form-modal').style.display = 'flex';
+        }
+        
+        function closePlanifierForm() {
+            document.getElementById('planifier-form-modal').style.display = 'none';
+            document.getElementById('planifier-nom').value = '';
+            document.getElementById('planifier-desc').value = '';
+        }
+        
+        async function loadItemsForOutfit() {
+            try {
+                const response = await fetch('http://localhost:5080/items');
+                const items = await response.json();
+                const container = document.getElementById('planifier-items-select');
+                container.innerHTML = '';
+                
+                items.forEach(item => {
+                    const checkbox = document.createElement('div');
+                    checkbox.innerHTML = `
+                        <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                            <input type="checkbox" value="${item.id}" data-item='${JSON.stringify(item)}'>
+                            <span>${item.name} (${item.category})</span>
+                        </label>
+                    `;
+                    container.appendChild(checkbox);
+                });
+            } catch (error) {
+                console.error('Erreur chargement articles:', error);
+            }
+        }
+        
+        async function submitPlanifierForm(event) {
+            event.preventDefault();
+            
+            const name = document.getElementById('planifier-nom').value;
+            const description = document.getElementById('planifier-desc').value;
+            const checkboxes = document.querySelectorAll('#planifier-items-select input[type="checkbox"]:checked');
+            
+            const selectedItems = Array.from(checkboxes).map(cb => JSON.parse(cb.dataset.item));
+            
+            if (!name || selectedItems.length === 0) {
+                alert('Veuillez saisir un nom et sélectionner au moins un article');
+                return;
+            }
+            
+            try {
+                const response = await fetch('http://localhost:5080/outfits', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: name,
+                        description: description,
+                        items: selectedItems
+                    })
+                });
+                
+                if (response.ok) {
+                    closePlanifierForm();
+                    loadOutfits();
+                } else {
+                    alert('Erreur lors de la création de la tenue');
+                }
+            } catch (error) {
+                console.error('Erreur:', error);
+                alert('Erreur lors de la création de la tenue');
+            }
+        }
+    </script>
 </body>
 </html>
