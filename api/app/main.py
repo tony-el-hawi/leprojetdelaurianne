@@ -250,6 +250,7 @@ class TagReader(Resource):
                         "status": "wait_item",
                         "hanger_id": HANGER_FOUND_ID
                     }
+            conn.commit()
             conn.close()
             if ITEM_FOUND_ID is not None and HANGER_FOUND_ID is not None:
                 conn = get_db()
