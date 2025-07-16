@@ -104,6 +104,7 @@ function showTab(tabName) {
     if (tabName === 'panier') {
         updateCartDisplay();
     }
+
 }
 
 // Main Menu
@@ -355,6 +356,7 @@ function removeFromCart(itemId) {
 
 function updateCartBadge() {
     const badge = document.getElementById('cart-badge');
+    if ( badge === null ) return;
     if (cart.length > 0) {
         badge.textContent = cart.length;
         badge.classList.add('show');
@@ -402,6 +404,18 @@ function resetToNormalMode() {
     deleteMode = false;
     editingItemId = null;
     
+    // Retirer la classe delete-mode de l'onglet organiser pour cacher la grille
+    const organiserTab = document.getElementById('organiser');
+    if (organiserTab) {
+        organiserTab.classList.remove('delete-mode');
+    }
+    
+    // Remettre le texte original du bouton de suppression
+    const deleteBtn = document.querySelector('#organiser .btn-secondary-blue');
+    if (deleteBtn) {
+        deleteBtn.textContent = '- Supprimer un habits';
+    }
+    
     const menuBtn = document.getElementById('menu-btn');    
     menuBtn.classList.remove('active');
     
@@ -424,10 +438,44 @@ function setEditMode() {
 
 function setDeleteMode() {
     editMode = false;
-    deleteMode = true;
+    
+    if (deleteMode) {
+        // Si déjà en mode suppression, on désactive
+        deleteMode = false;
+        
+        // Retirer la classe delete-mode de l'onglet organiser pour cacher la grille
+        const organiserTab = document.getElementById('organiser');
+        if (organiserTab) {
+            organiserTab.classList.remove('delete-mode');
+        }
+        
+        // Changer le texte du bouton pour revenir à l'état initial
+        const deleteBtn = document.querySelector('#organiser .btn-secondary-blue');
+        if (deleteBtn) {
+            deleteBtn.textContent = '- Supprimer un habits';
+        }
+        
+        //showToast('Mode suppression désactivé');
+    } else {
+        // Activer le mode suppression
+        deleteMode = true;
+        
+        // Ajouter la classe delete-mode à l'onglet organiser pour afficher la grille
+        const organiserTab = document.getElementById('organiser');
+        if (organiserTab) {
+            organiserTab.classList.add('delete-mode');
+        }
+        
+        // Changer le texte du bouton
+        const deleteBtn = document.querySelector('#organiser .btn-secondary-blue');
+        if (deleteBtn) {
+            deleteBtn.textContent = 'Fin de la suppression';
+        }
+        
+        //showToast('Mode suppression activé');
+    }
         
     displayItems();
-    showToast('Mode suppression activé');
 }
 
 // Item Management
@@ -484,6 +532,7 @@ async function deleteItem(itemId) {
             });
             
             if (response.ok) {
+                showToast(`${item.name} supprimé`);
                 await loadItems();
                 buildFilterOptions();
                 
@@ -493,7 +542,6 @@ async function deleteItem(itemId) {
                 updateCartBadge();
                 
                 displayItems();
-                showToast(`${item.name} supprimé`);
             } else {
                 showToast('Erreur lors de la suppression');
             }
