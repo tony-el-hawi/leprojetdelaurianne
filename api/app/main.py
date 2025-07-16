@@ -341,9 +341,11 @@ class OrderUpdate(Resource):
             'UPDATE orders SET items = ?, timestamp = ?, status = ? WHERE id = ?',
             (json.dumps(items_list), timestamp, status, id)
         )
+        app.logger.error(f"Order updated: id={id}, status={status}")
         conn.commit()
         conn.close()
         return {'message': 'Order updated successfully', 'order_id': id}, 200
+    
 @api.route('/outfits')
 class OutfitList(Resource):
     @api.marshal_list_with(outfit_model)
@@ -401,6 +403,18 @@ class Outfit(Resource):
         conn.commit()
         conn.close()
         return {'message': 'Outfit updated successfully'}, 200
+    
+    def delete(self, id):
+        """Supprime une tenue"""
+        conn = get_db()
+        conn.execute('DELETE FROM outfits WHERE id = ?', (id,))
+        conn.commit()
+        conn.close()
+        message = {
+            "status": "item_deleted",
+            "item_id": id
+        }
+        return message, 200
 
 def init_db():
     if not os.path.exists(DB_PATH):
