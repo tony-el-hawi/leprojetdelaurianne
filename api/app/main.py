@@ -383,6 +383,19 @@ class Outfit(Resource):
         conn.close()
         return {'message': 'Outfit updated successfully'}, 200
 
+    def delete(self, id):
+        """Supprime une tenue"""
+        conn = get_db()
+        conn.execute('DELETE FROM outfits WHERE id = ?', (id,))
+        conn.commit()
+        conn.close()
+        message = {
+            "status": "item_deleted",
+            "item_id": id
+        }
+        return message, 200
+
+
 def init_db():
     if not os.path.exists(DB_PATH):
         open(DB_PATH, 'a').close()
