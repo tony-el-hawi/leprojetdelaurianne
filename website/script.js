@@ -7,6 +7,7 @@ const API_CONFIG = {
 
 API_CONFIG.baseUrl = `http://localhost:5080/items`;
 API_CONFIG.ordersUrl = `http://localhost:5080/orders`;
+API_CONFIG.planifierUrl = `http://localhost:5080/outfits`;
 API_CONFIG.photoUrl = `http://localhost:5080/`;
 
 // State Management
@@ -937,54 +938,63 @@ function hidePlanifier() {
 }
 
 // Planifier - gestion des événements
-let planifierEvents = [
-    {
-        id: 1,
-        date: '2025-07-04',
-        desc: 'Rendez-vous coiffeur',
-        items: []
-    }
-];
+let planifierEvents = [];
 let selectedPlanifierId = null;
 let editingPlanifierId = null;
 
+async function getPlanifierEvents() {
+    
+    try {
+        const response = await fetch(API_CONFIG.planifierUrl);
+        if (response.ok) {
+            const outfits = await response.json();
+            console.log('Planifier events loaded:', outfits);
+        }
+    } catch (error) {
+        console.error('Error loading outfits:', error);
+        showToast('Erreur de chargement des tenues');
+    }
+}
+
 function renderPlanifier() {
-    const listDiv = document.getElementById('planifier-events-list');
-    let html = '';
-    // Afficher les tenues dans l'ordre d'ajout (plus récent en haut)
-    const sortedTenues = [...planifierEvents].reverse();
-    sortedTenues.forEach(tenue => {
-        html += `
-        <div class="planifier-card" data-id="${tenue.id}" onclick="selectPlanifierEvent(${tenue.id})" style="border:${selectedPlanifierId===tenue.id?'2px solid #667eea':'none'};">
-            <div class="planifier-card-content">
-                <span class="planifier-icon">🖊️</span>
-                <div>
-                    <div class="planifier-nom" style="font-weight:600;">${tenue.nom}</div>
-                    ${tenue.desc ? `<div class="planifier-desc">${tenue.desc}</div> <div class="planifier-desc">${tenue.date}</div>` : ''}
+    getPlanifierEvents().then(() => {
+        const listDiv = document.getElementById('planifier-events-list');
+        let html = '';
+        // Afficher les tenues dans l'ordre d'ajout (plus récent en haut)
+        const sortedTenues = [...planifierEvents].reverse();
+        sortedTenues.forEach(tenue => {
+            html += `
+            <div class="planifier-card" data-id="${tenue.id}" onclick="selectPlanifierEvent(${tenue.id})" style="border:${selectedPlanifierId===tenue.id?'2px solid #667eea':'none'};">
+                <div class="planifier-card-content">
+                    <span class="planifier-icon">🖊️</span>
+                    <div>
+                        <div class="planifier-nom" style="font-weight:600;">${tenue.nom}</div>
+                        ${tenue.desc ? `<div class="planifier-desc">${tenue.desc}</div> <div class="planifier-desc">${tenue.date}</div>` : ''}
+                    </div>
+                </div>
+                <div class="planifier-card-actions">
+                    <button class="edit-plan-btn" title="Modifier" onclick="event.stopPropagation();openPlanifierForm(${tenue.id})">&#9998;</button>
+                    <button class="lamp-plan-btn" title="Allumer" onclick="event.stopPropagation();handleLampForTenue(${tenue.id})" style="margin-left:4px;background:none;border:none;padding:0;font-size:20px;">💡</button>
+                    <button class="delete-plan-btn" title="Supprimer" onclick="event.stopPropagation();deletePlanifierEvent(${tenue.id})" style="margin-left:4px;">&#128465;</button>
                 </div>
             </div>
-            <div class="planifier-card-actions">
-                <button class="edit-plan-btn" title="Modifier" onclick="event.stopPropagation();openPlanifierForm(${tenue.id})">&#9998;</button>
-                <button class="lamp-plan-btn" title="Allumer" onclick="event.stopPropagation();handleLampForTenue(${tenue.id})" style="margin-left:4px;background:none;border:none;padding:0;font-size:20px;">💡</button>
-                <button class="delete-plan-btn" title="Supprimer" onclick="event.stopPropagation();deletePlanifierEvent(${tenue.id})" style="margin-left:4px;">&#128465;</button>
-            </div>
-        </div>
-        `;
-        if(selectedPlanifierId===tenue.id){
-            html += `<div class='planifier-items'><h4>Vêtements associés :</h4>`;
-            if(tenue.items.length===0){
-                html += `<div style='color:#6c757d;'>Aucun vêtement sélectionné</div>`;
-            }else{
-                html += tenue.items.map(itemId=>{
-                    const item = clothingItems.find(i=>i.id===itemId);
-                    if(!item) return '';
-                    return `<div class='planifier-item'>${item.name} <button onclick='removeItemFromEvent(${tenue.id},"${itemId}");event.stopPropagation();' style='margin-left:8px;'>×</button></div>`;
-                }).join('');
+            `;
+            if(selectedPlanifierId===tenue.id){
+                html += `<div class='planifier-items'><h4>Vêtements associés :</h4>`;
+                if(tenue.items.length===0){
+                    html += `<div style='color:#6c757d;'>Aucun vêtement sélectionné</div>`;
+                }else{
+                    html += tenue.items.map(itemId=>{
+                        const item = clothingItems.find(i=>i.id===itemId);
+                        if(!item) return '';
+                        return `<div class='planifier-item'>${item.name} <button onclick='removeItemFromEvent(${tenue.id},"${itemId}");event.stopPropagation();' style='margin-left:8px;'>×</button></div>`;
+                    }).join('');
+                }
+                html += `<button class='btn-primary' style='margin-top:10px;' onclick='event.stopPropagation();showCatalogueForEvent(${tenue.id})'>Ajouter/modifier les vêtements</button></div>`;
             }
-            html += `<button class='btn-primary' style='margin-top:10px;' onclick='event.stopPropagation();showCatalogueForEvent(${tenue.id})'>Ajouter/modifier les vêtements</button></div>`;
-        }
+        });
+        listDiv.innerHTML = html;
     });
-    listDiv.innerHTML = html;
 }
 
 function openPlanifierForm(id=null){
@@ -1043,7 +1053,7 @@ function closePlanifierForm(){
     editingPlanifierId = null;
 }
 
-function submitPlanifierForm(e){
+async function submitPlanifierForm(e){
     e.preventDefault();
     const nom = document.getElementById('planifier-nom').value.trim();
     const desc = document.getElementById('planifier-desc').value;
@@ -1066,13 +1076,35 @@ function submitPlanifierForm(e){
         if(tenue){
             tenue.nom = nom;
             tenue.desc = desc;
-            tenue.date = date; // <-- AJOUT
+            tenue.date = date; 
             tenue.items = checked;
         }
     }else{
         const newId = planifierEvents.length ? Math.max(...planifierEvents.map(e => e.id)) + 1 : 1;
         planifierEvents.push({ id: newId, nom, desc, date, items: checked }); // <-- AJOUT
     }
+
+    // Push in database
+    try {
+        const response = await fetch(API_CONFIG.planifierUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                name:nom,
+                description:desc,
+                items : checked
+            })
+        });
+        if (response.ok) {
+            showToast('Tenue enregistrée');
+        } else {
+            showToast('Erreur lors de l\'enregistrement');
+        }
+    } catch (error) {
+        console.error('Error loading orders:', error);
+        showToast('Erreur de chargement');
+    }
+
     closePlanifierForm();
     renderPlanifier();
     editingPlanifierId = null;
