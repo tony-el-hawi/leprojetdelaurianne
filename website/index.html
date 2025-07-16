@@ -21,15 +21,15 @@
         <nav class="bottom-nav">
             <button class="nav-btn active" onclick="showTab('planifier')" data-tab="planifier">
                 <i class="nav-icon fa-solid fa-house"></i>
-                <span class="nav-label">Planifier</span>
+                <span class="nav-label">Tenues</span>
             </button>
             <button class="nav-btn" onclick="showTab('organiser')" data-tab="organiser">
                 <i class="nav-icon fa-regular fa-compass"></i>
-                <span class="nav-label">Organiser</span>
+                <span class="nav-label">Vêtements</span>
             </button>
             <button class="nav-btn" onclick="showTab('liste')" data-tab="liste">
                 <i class="nav-icon fa-solid fa-list"></i>
-                <span class="nav-label">Liste</span>
+                <span class="nav-label">Choisir</span>
             </button>
         </nav>
 
@@ -40,7 +40,7 @@
             <div id="planifier" class="tab-content active">
                 <div class="innerPage-title">Planifier mes tenus</div>
                 <div class="innerPage-body">
-                    <div id="planifier-events-list"></div>
+                    <div id="planifier-events-list" ></div>
                 </div>
                 <div class="innerPage-footer">
                     <button class="btn-primary" onclick="openPlanifierForm()">+ Préparer une tenue</button>
@@ -73,15 +73,15 @@
                 </div>
             </div>
 
-            <!-- Organiser ses tenus (ajout/suppression habits)-->
+            <!-- Organiser ses tenus (ajout/suppression vêtement)-->
             <div id="organiser" class="tab-content">
                 <div class="innerPage-title">Organiser mon dressing</div>
                 <div class="innerPage-body">
-                    
+                     <div id="items-grid" class="items-grid"></div>
                 </div>
                 <div class="innerPage-footer">
-                    <button class="btn-secondary-blue" onclick="setDeleteMode()">- Supprimer un habits</button>
-                    <button class="btn-primary" onclick="showAddItemModal()">+ Ajouter un habits</button>
+                    <button class="btn-secondary-blue" onclick="setDeleteMode()">- Supprimer un vêtement</button>
+                    <button class="btn-primary" onclick="showAddItemModal()">+ Ajouter un vêtement</button>
                 </div>
             </div>
 
@@ -170,12 +170,12 @@
         <div id="add-item-modal" class="modal">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h3>Ajouter un article</h3>
+                    <h3>Ajouter un vêtement</h3>
                     <button class="close-btn" onclick="closeAddItemModal()">×</button>
                 </div>
                 <form id="add-item-form" class="item-form">
                     <div class="form-group">
-                        <input type="text" id="item-name" placeholder="Nom de l'article" required>
+                        <input type="text" id="item-name" placeholder="Nom du vêtement" required>
                     </div>
                     <div class="form-group">
                         <select id="item-category" required>
@@ -222,7 +222,7 @@
                 </div>
                 <form id="edit-item-form" class="item-form">
                     <div class="form-group">
-                        <input type="text" id="edit-item-name" placeholder="Nom de l'article" required>
+                        <input type="text" id="edit-item-name" placeholder="Nom du vêtement" required>
                     </div>
                     <div class="form-group">
                         <select id="edit-item-category" required>
