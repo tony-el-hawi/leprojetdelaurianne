@@ -964,6 +964,70 @@ async function getPlanifierEvents() {
     }
 }
 
+function selectPlanifierEvent(id) {
+    //console.log('Sélection de l\'événement planifié avec ID:', id);
+}
+
+async function handleLampForTenue(id) {
+
+    try {
+        // Save order to database
+        let items = [];
+        planifierEvents.forEach(event => {
+            if (event.id === id) {
+                event.items.forEach(itemId => {
+                    items.push({
+                        id: itemId,
+                    });
+                });
+            }
+        });
+
+        let _body = {
+                items: items,
+//                timestamp: new Date().toISOString(),
+//                status: 'pending',
+        };
+
+        console.log('Envoi de la commande pour la tenue:', _body);
+
+        const orderResponse = await fetch(API_CONFIG.ordersUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(_body)
+        });
+        
+        // Call Home Assistant API
+        const token = getHomeAssistantToken();
+        if (token) {
+            const response = await fetch(API_CONFIG.homeAssistantUrl, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    "entity_id": API_CONFIG.entityId
+                })
+            });
+        }
+        
+        hideLoading();
+        showSuccessModal();
+        
+        // Haptic feedback
+        if (navigator.vibrate) {
+            navigator.vibrate([100, 50, 100]);
+        }
+        
+    } catch (error) {
+        console.error('Order error:', error);
+        hideLoading();
+        showToast('Erreur lors de la commande');
+    }
+
+}
+
 function renderPlanifier() {
     getPlanifierEvents().then(() => {
         const listDiv = document.getElementById('planifier-events-list');
@@ -972,7 +1036,7 @@ function renderPlanifier() {
         const sortedTenues = [...planifierEvents].reverse();
         sortedTenues.forEach(tenue => {
             html += `
-            <div class="planifier-card" data-id="${tenue.id}" onclick="selectPlanifierEvent(${tenue.id})" style="border:${selectedPlanifierId===tenue.id?'2px solid #667eea':'none'};">
+            <div class="planifier-card" data-id="${tenue.id}" onclick="selectPlanifierEvent('${tenue.id}')" style="border:${selectedPlanifierId===tenue.id?'2px solid #667eea':'none'};">
                 <div class="planifier-card-content">
                     <span class="planifier-icon">🖊️</span>
                     <div>
@@ -981,9 +1045,9 @@ function renderPlanifier() {
                     </div>
                 </div>
                 <div class="planifier-card-actions">
-                    <button class="edit-plan-btn" title="Modifier" onclick="event.stopPropagation();openPlanifierForm(${tenue.id})">&#9998;</button>
-                    <button class="lamp-plan-btn" title="Allumer" onclick="event.stopPropagation();handleLampForTenue(${tenue.id})" style="margin-left:4px;background:none;border:none;padding:0;font-size:20px;">💡</button>
-                    <button class="delete-plan-btn" title="Supprimer" onclick="event.stopPropagation();deletePlanifierEvent(${tenue.id})" style="margin-left:4px;">&#128465;</button>
+                    <button class="edit-plan-btn" title="Modifier" onclick="openPlanifierForm('${tenue.id}');event.stopPropagation()">&#9998;</button>
+                    <button class="lamp-plan-btn" title="Allumer" onclick="handleLampForTenue('${tenue.id}');event.stopPropagation()" style="margin-left:4px;background:none;border:none;padding:0;font-size:20px;">💡</button>
+                    <button class="delete-plan-btn" title="Supprimer" onclick="deletePlanifierEvent('${tenue.id}');event.stopPropagation()" style="margin-left:4px;">&#128465;</button>
                 </div>
             </div>
             `;
@@ -1119,16 +1183,31 @@ async function submitPlanifierForm(e){
     editingPlanifierId = null;
 }
 
-function deletePlanifierEvent(id) {
-    const idx = planifierEvents.findIndex(e => e.id === id);
-    if (idx === -1) return;
-    const tenue = planifierEvents[idx];
-    if (confirm(`Supprimer la tenue « ${tenue.nom} » ?`)) {
+async function deletePlanifierEvent(id) {
+    // supprime en base de données
+    try {
+        const response = await fetch(`${API_CONFIG.planifierUrl}/${id}`, {
+            method: 'DELETE'
+        });
+            
+        if (response.ok) {
+            renderPlanifier();
+            showToast('Tenue supprimée');
+        } else {
+            showToast('Erreur lors de la suppression');
+        }
+    } catch (error) {
+        console.error('Error deleting outfit:', error);
+        showToast('Erreur de connexion');
+    }
+
+
+    /*if (confirm(`Supprimer la tenue « ${tenue.nom} » ?`)) {
         planifierEvents.splice(idx, 1);
         if (selectedPlanifierId === id) selectedPlanifierId = null;
         renderPlanifier();
         showToast('Tenue supprimée');
-    }
+    }*/
 }
 
 // Affichage initial de la section planifier
