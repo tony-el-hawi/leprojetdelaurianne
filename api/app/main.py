@@ -223,7 +223,7 @@ class TagReader(Resource):
             conn.close()
             app.logger.info(f"Tag {tag_id} associé à l'item {TAG_WAIT_ITEM_ID}")
             message = {
-                "status": "association",
+                "status": "association_complete",
                 "tag_id": tag_id,
                 "item_id": TAG_WAIT_ITEM_ID
             }
