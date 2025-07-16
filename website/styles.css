@@ -315,6 +315,10 @@ body {
     display: none;
 }
 
+#organiser.delete-mode .del-btn{
+    display: none;
+}
+
 #liste .edit-btn {
     display: none;
 }
