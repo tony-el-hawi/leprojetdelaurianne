@@ -348,14 +348,15 @@ class OutfitList(Resource):
         item_ids = data.get('items', [])
         conn = get_db()
         conn.execute(
-            'INSERT INTO outfits (id, name, description, items) VALUES (?, ?, ?, ?)',
-            (outfit_id, data.get('name'), data.get('description'), json.dumps(item_ids))
+            'INSERT INTO outfits (id, name, description, items, date) VALUES (?, ?, ?, ?, ?)',
+            (outfit_id, data.get('name'), data.get('description'), json.dumps(item_ids), data.get('date'))
         )
         conn.commit()
         outfit = {
             'id': outfit_id,
             'name': data.get('name'),
             'description': data.get('description'),
+            'date': data.get('date'),
             'items': item_ids
         }
         conn.close()
@@ -375,8 +376,8 @@ class Outfit(Resource):
         
         item_ids = data.get('items', [])
         conn.execute(
-            'UPDATE outfits SET name = ?, description = ?, items = ? WHERE id = ?',
-            (data.get('name'), data.get('description'), json.dumps(item_ids), id)
+            'UPDATE outfits SET name = ?, description = ?, items = ?, date = ? WHERE id = ?',
+            (data.get('name'), data.get('description'), json.dumps(item_ids), data.get('date'), id)
         )
         conn.commit()
         conn.close()
