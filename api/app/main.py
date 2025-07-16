@@ -35,8 +35,11 @@ tag_add_model = api.model('TagAdd', {
 })
 
 
-# Variable globale pour stocker l'item_id en attente
+# Variables globales pour la gestion des associations
 TAG_WAIT_ITEM_ID = None
+TAG_FOUND_ID = None
+ITEM_FOUND_ID = None
+HANGER_FOUND_ID = None
 
 @api.route('/items')
 class ItemList(Resource):
@@ -109,7 +112,12 @@ class Item(Resource):
         )
         conn.commit()
         conn.close()
-        return {'message': 'Item updated successfully'}, 200
+        
+        message = {
+            "status": "item_updated",
+            "item_id": id
+        }
+        return message, 200
 
     def delete(self, id):
         """Supprime un item"""
@@ -117,7 +125,12 @@ class Item(Resource):
         conn.execute('DELETE FROM items WHERE id = ?', (id,))
         conn.commit()
         conn.close()
-        return {'message': 'Item deleted successfully'}, 200
+        
+        message = {
+            "status": "item_deleted",
+            "item_id": id
+        }
+        return message, 200
 
 
 @api.route('/hangers')
@@ -168,7 +181,11 @@ class Hanger(Resource):
         )
         conn.commit()
         conn.close()
-        return {'message': 'Hanger updated successfully'}, 200
+        message = {
+            "status": "hanger_updated",
+            "hanger_id": id
+        }
+        return message, 200
 
     def delete(self, id):
         """Supprime un cintre"""
@@ -176,33 +193,41 @@ class Hanger(Resource):
         conn.execute('DELETE FROM hangers WHERE id = ?', (id,))
         conn.commit()
         conn.close()
-        return {'message': 'Hanger deleted successfully'}, 200
+        message = {
+            "status": "hanger_deleted",
+            "hanger_id": id
+        }
+        return message, 200
 
 @api.route('/tag')
 class TagReader(Resource):
     @api.expect(tag_input_model)
     def post(self):
         """Reçoit un tag lu par un lecteur externe"""
+        
+        global TAG_WAIT_ITEM_ID
+        global TAG_FOUND_ID
+        global ITEM_FOUND_ID
+        global HANGER_FOUND_ID
+
         data = api.payload
         tag_id = data.get('tag_id')
         app.logger.info(f"Tag reçu : {tag_id}")
 
-        global TAG_WAIT_ITEM_ID
-        global ITEM_FOUND_ID
-        global HANGER_FOUND_ID
+        TAG_FOUND_ID = tag_id
         message = ''
         if TAG_WAIT_ITEM_ID is not None:
             conn = get_db()
             conn.execute('UPDATE items SET tag_id = ? WHERE id = ?', (tag_id, TAG_WAIT_ITEM_ID))
             conn.commit()
             conn.close()
-            TAG_WAIT_ITEM_ID = None
             app.logger.info(f"Tag {tag_id} associé à l'item {TAG_WAIT_ITEM_ID}")
             message = {
-                "status": "association",
+                "status": "association_complete",
                 "tag_id": tag_id,
                 "item_id": TAG_WAIT_ITEM_ID
             }
+            TAG_WAIT_ITEM_ID = None
         else:
             conn = get_db()
             cur = conn.execute('SELECT id FROM items WHERE tag_id = ?', (tag_id,))
@@ -243,13 +268,20 @@ class TagReader(Resource):
     def get(self):
         """Reçoit un id d'item, le stocke en variable globale, et attend que la variable soit remise à null avant de répondre"""
         global TAG_WAIT_ITEM_ID
-        item_id = request.args.get('item_id')
+        data = api.payload
+        item_id = data.get('item_id')
         TAG_WAIT_ITEM_ID = item_id
         app.logger.info(f"Item en attente de tag (GET /tag): {TAG_WAIT_ITEM_ID}")
         # Attente active jusqu'à ce que TAG_WAIT_ITEM_ID soit remis à None
         while TAG_WAIT_ITEM_ID is not None:
             time.sleep(0.5)
-        return {'message': 'Tag associé, attente terminée.'}, 200
+        
+        message = {
+            "status": "association_complete",
+            "item_id": item_id,
+            "tag_id": TAG_FOUND_ID
+        }
+        return message, 200
 
 @api.route('/orders')
 class OrderList(Resource):
