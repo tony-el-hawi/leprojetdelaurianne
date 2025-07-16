@@ -6,8 +6,9 @@ import uuid
 import sqlite3
 import json
 import os
+import time
 
-from models import item_model_def, item_model_db_init, order_model_def, order_model_db_init
+from models import item_model_def, item_model_db_init, order_model_def, order_model_db_init, hanger_model_def, hanger_model_db_init, outfit_model_def, outfit_model_db_init
 
 # Dossier photos accessible en static
 PHOTOS_DIR = os.path.join(os.path.dirname(__file__), '..', 'photos')
@@ -24,6 +25,22 @@ def get_db():
 
 item_model = api.model('Item', item_model_def)
 order_model = api.model('Order', order_model_def)
+hanger_model = api.model('Hanger', hanger_model_def)
+outfit_model = api.model('Outfit', outfit_model_def)
+
+tag_input_model = api.model('TagInput', {
+    'tag_id': fields.String(example="Identifiant NFC/RFID", description="Identifiant du tag lu")
+})
+tag_add_model = api.model('TagAdd', {
+    'item_id': fields.String(example="Identifiant d'un Item", description="Identifiant de l'item à associer à un tag")
+})
+
+
+# Variables globales pour la gestion des associations
+TAG_WAIT_ITEM_ID = None
+TAG_FOUND_ID = None
+ITEM_FOUND_ID = None
+HANGER_FOUND_ID = None
 
 @api.route('/items')
 class ItemList(Resource):
@@ -41,8 +58,10 @@ class ItemList(Resource):
     def post(self):
         """Crée un nouvel item (supporte l'upload de photo en base64 ou lien direct)"""
         data = api.payload
-        item_id = str(uuid.uuid4())
+        item_id = "item_" + str(uuid.uuid4())
         photo_url = data.get('photo')
+        tag_id = data.get('tag_id')
+        hanger_id = data.get('hanger_id')
 
         # Si la photo est en base64, on la sauvegarde localement
         if photo_url and photo_url.startswith('data:image'):
@@ -59,8 +78,8 @@ class ItemList(Resource):
 
         conn = get_db()
         conn.execute(
-            'INSERT INTO items (id, name, category, color, size, photo) VALUES (?, ?, ?, ?, ?, ?)',
-            (item_id, data.get('name'), data.get('category'), data.get('color'), data.get('size'), photo_url)
+            'INSERT INTO items (id, name, category, color, size, photo, tag_id, hanger_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            (item_id, data.get('name'), data.get('category'), data.get('color'), data.get('size'), photo_url, tag_id, hanger_id)
         )
         conn.commit()
         item = {
@@ -69,7 +88,9 @@ class ItemList(Resource):
             'category': data.get('category'),
             'color': data.get('color'),
             'size': data.get('size'),
-            'photo': photo_url
+            'photo': photo_url,
+            'tag_id': tag_id,
+            'hanger_id': hanger_id
         }
         conn.close()
         return item, 201
@@ -87,12 +108,17 @@ class Item(Resource):
             conn.close()
             return {'error': 'Item not found'}, 404
         conn.execute(
-            'UPDATE items SET name = ?, category = ?, color = ?, size = ?, photo = ? WHERE id = ?',
-            (data.get('name'), data.get('category'), data.get('color'), data.get('size'), data.get('photo'), id)
+            'UPDATE items SET name = ?, category = ?, color = ?, size = ?, photo = ?, tag_id = ?, hanger_id = ? WHERE id = ?',
+            (data.get('name'), data.get('category'), data.get('color'), data.get('size'), data.get('photo'), data.get('tag_id'), data.get('hanger_id'), id)
         )
         conn.commit()
         conn.close()
-        return {'message': 'Item updated successfully'}, 200
+        
+        message = {
+            "status": "item_updated",
+            "item_id": id
+        }
+        return message, 200
 
     def delete(self, id):
         """Supprime un item"""
@@ -100,8 +126,163 @@ class Item(Resource):
         conn.execute('DELETE FROM items WHERE id = ?', (id,))
         conn.commit()
         conn.close()
-        return {'message': 'Item deleted successfully'}, 200
+        
+        message = {
+            "status": "item_deleted",
+            "item_id": id
+        }
+        return message, 200
 
+
+@api.route('/hangers')
+class HangerList(Resource):
+    @api.marshal_list_with(hanger_model)
+    def get(self):
+        """Récupère tous les cintres"""
+        conn = get_db()
+        cur = conn.execute('SELECT * FROM hangers')
+        hangers = [dict(row) for row in cur.fetchall()]
+        conn.close()
+        return hangers, 200
+
+    @api.expect(hanger_model)
+    @api.marshal_with(hanger_model, code=201)
+    def post(self):
+        """Crée un nouveau cintre"""
+        data = api.payload
+        hanger_id = "hanger_" + str(uuid.uuid4())
+        conn = get_db()
+        conn.execute(
+            'INSERT INTO hangers (id, tag_id, mqtt_topic) VALUES (?, ?, ?)',
+            (hanger_id, data.get('tag_id'), data.get('mqtt_topic'))
+        )
+        conn.commit()
+        hanger = {
+            'id': hanger_id,
+            'tag_id': data.get('tag_id'),
+            'mqtt_topic': data.get('mqtt_topic')
+        }
+        conn.close()
+        return hanger, 201
+
+@api.route('/hangers/<string:id>')
+class Hanger(Resource):
+    @api.expect(hanger_model)
+    def put(self, id):
+        """Met à jour un cintre"""
+        data = api.payload
+        conn = get_db()
+        cur = conn.execute('SELECT * FROM hangers WHERE id = ?', (id,))
+        if cur.fetchone() is None:
+            conn.close()
+            return {'error': 'Hanger not found'}, 404
+        conn.execute(
+            'UPDATE hangers SET tag_id = ?, mqtt_topic = ? WHERE id = ?',
+            (data.get('tag_id'), data.get('mqtt_topic'), id)
+        )
+        conn.commit()
+        conn.close()
+        message = {
+            "status": "hanger_updated",
+            "hanger_id": id
+        }
+        return message, 200
+
+    def delete(self, id):
+        """Supprime un cintre"""
+        conn = get_db()
+        conn.execute('DELETE FROM hangers WHERE id = ?', (id,))
+        conn.commit()
+        conn.close()
+        message = {
+            "status": "hanger_deleted",
+            "hanger_id": id
+        }
+        return message, 200
+
+@api.route('/tag')
+class TagReader(Resource):
+    @api.expect(tag_input_model)
+    def post(self):
+        """Reçoit un tag lu par un lecteur externe"""
+        
+        global TAG_WAIT_ITEM_ID
+        global TAG_FOUND_ID
+        global ITEM_FOUND_ID
+        global HANGER_FOUND_ID
+
+        data = api.payload
+        tag_id = data.get('tag_id')
+        app.logger.info(f"Tag reçu : {tag_id}")
+
+        TAG_FOUND_ID = tag_id
+        message = ''
+        if TAG_WAIT_ITEM_ID is not None:
+            conn = get_db()
+            conn.execute('UPDATE items SET tag_id = ? WHERE id = ?', (tag_id, TAG_WAIT_ITEM_ID))
+            conn.commit()
+            conn.close()
+            app.logger.info(f"Tag {tag_id} associé à l'item {TAG_WAIT_ITEM_ID}")
+            message = {
+                "status": "association_complete",
+                "tag_id": tag_id,
+                "item_id": TAG_WAIT_ITEM_ID
+            }
+            TAG_WAIT_ITEM_ID = None
+        else:
+            conn = get_db()
+            cur = conn.execute('SELECT id FROM items WHERE tag_id = ?', (tag_id,))
+            item_row = cur.fetchone()
+            if item_row:
+                ITEM_FOUND_ID = item_row['id']
+                app.logger.info(f"Tag {tag_id} trouvé dans items, id: {ITEM_FOUND_ID}")
+                message = {
+                    "status": "wait_hanger",
+                    "item_id": ITEM_FOUND_ID
+                }
+            else:
+                cur = conn.execute('SELECT id FROM hangers WHERE tag_id = ?', (tag_id,))
+                hanger_row = cur.fetchone()
+                if hanger_row:
+                    HANGER_FOUND_ID = hanger_row['id']
+                    app.logger.info(f"Tag {tag_id} trouvé dans hangers, id: {HANGER_FOUND_ID}")
+                    message = {
+                        "status": "wait_item",
+                        "hanger_id": HANGER_FOUND_ID
+                    }
+            conn.close()
+            if ITEM_FOUND_ID is not None and HANGER_FOUND_ID is not None:
+                conn = get_db()
+                conn.execute('UPDATE items SET hanger_id = ? WHERE id = ?', (HANGER_FOUND_ID, ITEM_FOUND_ID))
+                conn.commit()
+                conn.close()
+                ITEM_FOUND_ID = None
+                HANGER_FOUND_ID = None
+                message = {
+                    "status": "association_complete",
+                    "item_id": ITEM_FOUND_ID,
+                    "hanger_id": HANGER_FOUND_ID
+                }
+        return message, 200
+
+    @api.expect(tag_add_model)
+    def get(self):
+        """Reçoit un id d'item, le stocke en variable globale, et attend que la variable soit remise à null avant de répondre"""
+        global TAG_WAIT_ITEM_ID
+        data = api.payload
+        item_id = data.get('item_id')
+        TAG_WAIT_ITEM_ID = item_id
+        app.logger.info(f"Item en attente de tag (GET /tag): {TAG_WAIT_ITEM_ID}")
+        # Attente active jusqu'à ce que TAG_WAIT_ITEM_ID soit remis à None
+        while TAG_WAIT_ITEM_ID is not None:
+            time.sleep(0.5)
+        
+        message = {
+            "status": "association_complete",
+            "item_id": item_id,
+            "tag_id": TAG_FOUND_ID
+        }
+        return message, 200
 
 @api.route('/orders')
 class OrderList(Resource):
@@ -124,7 +305,7 @@ class OrderList(Resource):
     def post(self):
         """Crée une nouvelle commande (items est une liste JSON)"""
         data = api.payload
-        order_id = str(uuid.uuid4())
+        order_id = "order_" + str(uuid.uuid4())
         items_list = data.get('items', [])
         timestamp = datetime.now().isoformat() + 'Z'
         status = 'En cours'
@@ -143,12 +324,50 @@ class OrderList(Resource):
         conn.close()
         return order, 201
 
+@api.route('/outfits')
+class OutfitList(Resource):
+    @api.marshal_list_with(outfit_model)
+    def get(self):
+        """Récupère toutes les tenues"""
+        conn = get_db()
+        cur = conn.execute('SELECT * FROM outfits')
+        outfits = []
+        for row in cur.fetchall():
+            outfit = dict(row)
+            outfit['items'] = json.loads(outfit['items']) if outfit['items'] else []
+            outfits.append(outfit)
+        conn.close()
+        return outfits, 200
+
+    @api.expect(outfit_model)
+    @api.marshal_with(outfit_model, code=201)
+    def post(self):
+        """Crée une nouvelle tenue"""
+        data = api.payload
+        outfit_id = "outfit_" + str(uuid.uuid4())
+        items_list = data.get('items', [])
+        conn = get_db()
+        conn.execute(
+            'INSERT INTO outfits (id, name, description, items) VALUES (?, ?, ?, ?)',
+            (outfit_id, data.get('name'), data.get('description'), json.dumps(items_list))
+        )
+        conn.commit()
+        outfit = {
+            'id': outfit_id,
+            'name': data.get('name'),
+            'description': data.get('description'),
+            'items': items_list
+        }
+        conn.close()
+        return outfit, 201
+
 def init_db():
     if not os.path.exists(DB_PATH):
         open(DB_PATH, 'a').close()
     conn = sqlite3.connect(DB_PATH)
     conn.execute(item_model_db_init)
     conn.execute(order_model_db_init)
+    conn.execute(hanger_model_db_init)
     conn.commit()
     conn.close()
 
