@@ -205,7 +205,6 @@ class TagReader(Resource):
     @api.expect(tag_input_model)
     def post(self):
         """Reçoit un tag lu par un lecteur externe"""
-        
         global TAG_WAIT_ITEM_ID
         global TAG_FOUND_ID
         global ITEM_FOUND_ID
@@ -266,21 +265,20 @@ class TagReader(Resource):
                 }
         return message, 200
 
-    @api.expect(tag_add_model)
-    def get(self):
-        """Reçoit un id d'item, le stocke en variable globale, et attend que la variable soit remise à null avant de répondre"""
+# Nouvelle route GET /tag/<string:id>
+@api.route('/tag/<string:id>')
+class TagWait(Resource):
+    def get(self, id):
+        """Reçoit un id d'item dans l'URL, le stocke en variable globale, et attend que la variable soit remise à null avant de répondre"""
         global TAG_WAIT_ITEM_ID
-        data = api.payload
-        item_id = data.get('item_id')
-        TAG_WAIT_ITEM_ID = item_id
-        app.logger.info(f"Item en attente de tag (GET /tag): {TAG_WAIT_ITEM_ID}")
+        TAG_WAIT_ITEM_ID = id
+        app.logger.info(f"Item en attente de tag (GET /tag/<id>): {TAG_WAIT_ITEM_ID}")
         # Attente active jusqu'à ce que TAG_WAIT_ITEM_ID soit remis à None
         while TAG_WAIT_ITEM_ID is not None:
             time.sleep(0.5)
-        
         message = {
             "status": "association_complete",
-            "item_id": item_id,
+            "item_id": id,
             "tag_id": TAG_FOUND_ID
         }
         return message, 200
@@ -349,15 +347,14 @@ class OutfitList(Resource):
         item_ids = data.get('items', [])
         conn = get_db()
         conn.execute(
-            'INSERT INTO outfits (id, name, description, items, date) VALUES (?, ?, ?, ?, ?)',
-            (outfit_id, data.get('name'), data.get('description'), json.dumps(item_ids), data.get('date'))
+            'INSERT INTO outfits (id, name, description, items) VALUES (?, ?, ?, ?)',
+            (outfit_id, data.get('name'), data.get('description'), json.dumps(item_ids))
         )
         conn.commit()
         outfit = {
             'id': outfit_id,
             'name': data.get('name'),
             'description': data.get('description'),
-            'date': data.get('date'),
             'items': item_ids
         }
         conn.close()
@@ -377,25 +374,12 @@ class Outfit(Resource):
         
         item_ids = data.get('items', [])
         conn.execute(
-            'UPDATE outfits SET name = ?, description = ?, items = ?, date = ? WHERE id = ?',
-            (data.get('name'), data.get('description'), json.dumps(item_ids), data.get('date'), id)
+            'UPDATE outfits SET name = ?, description = ?, items = ? WHERE id = ?',
+            (data.get('name'), data.get('description'), json.dumps(item_ids), id)
         )
         conn.commit()
         conn.close()
         return {'message': 'Outfit updated successfully'}, 200
-
-    def delete(self, id):
-        """Supprime une tenue"""
-        conn = get_db()
-        conn.execute('DELETE FROM outfits WHERE id = ?', (id,))
-        conn.commit()
-        conn.close()
-        message = {
-            "status": "item_deleted",
-            "item_id": id
-        }
-        return message, 200
-
 
 def init_db():
     if not os.path.exists(DB_PATH):
@@ -404,7 +388,6 @@ def init_db():
     conn.execute(item_model_db_init)
     conn.execute(order_model_db_init)
     conn.execute(hanger_model_db_init)
-    conn.execute(outfit_model_db_init)
     conn.commit()
     conn.close()
 
