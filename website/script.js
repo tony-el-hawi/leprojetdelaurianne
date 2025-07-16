@@ -269,14 +269,7 @@ function displayItems() {
                 activeFilters.colors.includes(item.color)
             );
         }
-        
-        // Apply size filter
-        if (activeFilters.sizes.length > 0) {
-            filteredItems = filteredItems.filter(item => 
-                activeFilters.sizes.includes(item.size)
-            );
-        }
-        
+                
         if (filteredItems.length === 0) {
             grid.innerHTML = `
                 <div class="empty-state" style="grid-column: 1 / -1;">
