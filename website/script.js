@@ -5,10 +5,11 @@ const API_CONFIG = {
     entityId: 'light.headlight'
 };
 
-API_CONFIG.baseUrl = `http://localhost:5080/items`;
-API_CONFIG.ordersUrl = `http://localhost:5080/orders`;
-API_CONFIG.planifierUrl = `http://localhost:5080/outfits`;
-API_CONFIG.photoUrl = `http://localhost:5080/`;
+const host = window.location.hostname;
+API_CONFIG.baseUrl = `http://${host}:5080/items`;
+API_CONFIG.ordersUrl = `http://${host}:5080/orders`;
+API_CONFIG.planifierUrl = `http://${host}:5080/outfits`;
+API_CONFIG.photoUrl = `http://${host}:5080/`;
 
 // State Management
 let clothingItems = [];
