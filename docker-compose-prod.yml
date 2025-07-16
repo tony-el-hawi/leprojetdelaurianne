@@ -13,9 +13,7 @@ services:
   website:
     build: ./website
     ports:
-      - "8080:80"
-    volumes:
-      - ./website:/usr/share/nginx/html
+      - "80:80"
     restart: unless-stopped
 
   mqtt:
