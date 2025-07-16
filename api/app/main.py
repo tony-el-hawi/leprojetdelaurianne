@@ -345,21 +345,42 @@ class OutfitList(Resource):
         """Crée une nouvelle tenue"""
         data = api.payload
         outfit_id = "outfit_" + str(uuid.uuid4())
-        items_list = data.get('items', [])
+        item_ids = data.get('items', [])
         conn = get_db()
         conn.execute(
             'INSERT INTO outfits (id, name, description, items) VALUES (?, ?, ?, ?)',
-            (outfit_id, data.get('name'), data.get('description'), json.dumps(items_list))
+            (outfit_id, data.get('name'), data.get('description'), json.dumps(item_ids))
         )
         conn.commit()
         outfit = {
             'id': outfit_id,
             'name': data.get('name'),
             'description': data.get('description'),
-            'items': items_list
+            'items': item_ids
         }
         conn.close()
         return outfit, 201
+
+@api.route('/outfits/<string:id>')
+class Outfit(Resource):
+    @api.expect(outfit_model)
+    def put(self, id):
+        """Met à jour une tenue"""
+        data = api.payload
+        conn = get_db()
+        cur = conn.execute('SELECT * FROM outfits WHERE id = ?', (id,))
+        if cur.fetchone() is None:
+            conn.close()
+            return {'error': 'Outfit not found'}, 404
+        
+        item_ids = data.get('items', [])
+        conn.execute(
+            'UPDATE outfits SET name = ?, description = ?, items = ? WHERE id = ?',
+            (data.get('name'), data.get('description'), json.dumps(item_ids), id)
+        )
+        conn.commit()
+        conn.close()
+        return {'message': 'Outfit updated successfully'}, 200
 
 def init_db():
     if not os.path.exists(DB_PATH):
