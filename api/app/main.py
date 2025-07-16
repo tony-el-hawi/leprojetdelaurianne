@@ -323,6 +323,27 @@ class OrderList(Resource):
         conn.close()
         return order, 201
 
+@api.route('/orders/<string:id>')
+class OrderUpdate(Resource):
+    @api.expect(order_model)
+    def put(self, id):
+        """Met à jour une commande existante (id passé dans l'URL)"""
+        data = api.payload
+        conn = get_db()
+        cur = conn.execute('SELECT * FROM orders WHERE id = ?', (id,))
+        if cur.fetchone() is None:
+            conn.close()
+            return {'error': 'Order not found'}, 404
+        items_list = data.get('items', [])
+        timestamp = data.get('timestamp')
+        status = data.get('status')
+        conn.execute(
+            'UPDATE orders SET items = ?, timestamp = ?, status = ? WHERE id = ?',
+            (json.dumps(items_list), timestamp, status, id)
+        )
+        conn.commit()
+        conn.close()
+        return {'message': 'Order updated successfully', 'order_id': id}, 200
 @api.route('/outfits')
 class OutfitList(Resource):
     @api.marshal_list_with(outfit_model)
