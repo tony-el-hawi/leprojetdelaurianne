@@ -59,12 +59,14 @@ outfit_model_def = {
     'id': fields.String(description="Identifiant unique de la tenue"),
     'name': fields.String(example="Tenue décontractée", description="Nom de la tenue"),
     'description': fields.String(example="Pour le weekend", description="Description de la tenue"),
-    'items': fields.List(fields.String, description="Liste des IDs des articles de la tenue", example=["item_123", "item_456"])
+    'items': fields.List(fields.String, description="Liste des IDs des articles de la tenue", example=["item_123", "item_456"]),
+    'date': fields.String(example="2023-10-01", description="Date de création de la tenue"),
 }
 
 outfit_model_db_init = '''CREATE TABLE IF NOT EXISTS outfits (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
     description TEXT,
-    items TEXT
+    items TEXT,
+    date TEXT
 )'''

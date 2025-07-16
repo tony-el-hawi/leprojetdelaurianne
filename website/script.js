@@ -947,12 +947,20 @@ async function getPlanifierEvents() {
     try {
         const response = await fetch(API_CONFIG.planifierUrl);
         if (response.ok) {
+            planifierEvents = [];
             const outfits = await response.json();
-            console.log('Planifier events loaded:', outfits);
+            outfits.forEach(outfit => {
+                planifierEvents.push({
+                    id: outfit.id,
+                    nom: outfit.name,
+                    desc: outfit.description || '',
+                    date: outfit.date || '',
+                    items: outfit.items || [],
+                });
+            });
         }
     } catch (error) {
-        console.error('Error loading outfits:', error);
-        showToast('Erreur de chargement des tenues');
+        planifierEvents = [];
     }
 }
 
@@ -1092,6 +1100,7 @@ async function submitPlanifierForm(e){
             body: JSON.stringify({
                 name:nom,
                 description:desc,
+                date:date,
                 items : checked
             })
         });
