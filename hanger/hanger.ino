@@ -61,6 +61,7 @@ void setup() {
   leds_sub = new Adafruit_MQTT_Subscribe(&mqtt, topic);
   mqtt.subscribe(leds_sub);
 
+  MQTT_connect();
   if (!leds_pub->publish("Create")) {
     Serial.println(F("Failed"));
   } else {
@@ -74,8 +75,43 @@ void loop() {
   Adafruit_MQTT_Subscribe *subscription;
   while ((subscription = mqtt.readSubscription(5000))) {
     if (subscription == leds_sub) {
-      Serial.print(F("Got: "));
-      Serial.println((char *)leds_sub->lastread);
+    Serial.print(F("Got: "));
+    Serial.println((char *)leds_sub->lastread);
+
+    // Parse the received string into an array of colors
+    const char* payload = (char*)leds_sub->lastread;
+    const int maxColors = 10; // adjust as needed
+    int colors[maxColors][3];
+    int colorCount = 0;
+
+    const char* ptr = payload;
+    while (*ptr && colorCount < maxColors) {
+      int r, g, b;
+      if (sscanf(ptr, " (%d,%d,%d)", &r, &g, &b) == 3 ||
+        sscanf(ptr, "(%d,%d,%d)", &r, &g, &b) == 3) {
+        colors[colorCount][0] = r;
+        colors[colorCount][1] = g;
+        colors[colorCount][2] = b;
+        colorCount++;
+      }
+      // Move ptr to next '(' or end
+      ptr = strchr(ptr, ')');
+      if (ptr) ptr++;
+      while (*ptr && *ptr != '(') ptr++;
+    }
+
+    // Debug: print parsed colors
+    for (int i = 0; i < colorCount; ++i) {
+      Serial.print("Color ");
+      Serial.print(i);
+      Serial.print(": (");
+      Serial.print(colors[i][0]);
+      Serial.print(",");
+      Serial.print(colors[i][1]);
+      Serial.print(",");
+      Serial.print(colors[i][2]);
+      Serial.println(")");
+    }
     }
   }
 }
